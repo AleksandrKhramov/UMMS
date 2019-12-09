@@ -1,0 +1,23 @@
+//---------------------------------------------------------------------------
+#include "MS3071InterfaceClass.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+//---------------------------------------------------------------------------
+//Конструктор
+TMS3071Interface::TMS3071Interface()
+{
+	Protocols = new TProtocols;
+    std::vector< std::vector<unsigned char> > Patterns(0, std::vector<unsigned char> (0, 0));
+    Patterns = Protocols->GetPatterns();
+	//TIdBytes AData;
+    //AData.set_length(8);
+
+	//SearchPatterns->Add(
+}
+//---------------------------------------------------------------------------
+//Деструктор
+TMS3071Interface::~TMS3071Interface()
+{
+
+}
+//---------------------------------------------------------------------------

@@ -1,0 +1,25 @@
+//---------------------------------------------------------------------------
+#include "Properties.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+//---------------------------------------------------------------------------
+//Конструктор
+TRealValues::TRealValues()
+{
+	ValuesQuantity = 65;
+    InitialAddress = 40001;
+
+    for(int i = 0; i < ValuesQuantity; ++i)
+        RealValues.push_back(new TAbstractValue(InitialAddress + i));
+}
+//---------------------------------------------------------------------------
+//Деструктор
+TRealValues::~TRealValues()
+{
+	for(int i = 0; i < ValuesQuantity; ++i)
+        delete RealValues[i];
+
+    RealValues.clear();
+    RealValues.~vector();
+}
+//---------------------------------------------------------------------------

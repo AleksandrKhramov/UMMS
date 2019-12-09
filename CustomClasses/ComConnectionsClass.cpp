@@ -1,0 +1,73 @@
+//---------------------------------------------------------------------------
+#include "ComConnectionsClass.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+//---------------------------------------------------------------------------
+//Конструктор
+TComConnections::TComConnections(TComponent* _Owner)
+{
+	DataReadyForSendingTrigger = NULL;
+	Owner = _Owner;
+}
+//---------------------------------------------------------------------------
+//Деструктор
+TComConnections::~TComConnections()
+{
+	for(int i = 0; i < ComConnections.size(); ++i)
+		ComConnections[i]->~TComConnection();
+    ComConnections.clear();
+    ComConnections.~vector();
+}
+//---------------------------------------------------------------------------
+void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vector<byte> Data)
+{
+    Data.insert(Data.begin(), ComConnection->ComNumber);
+    Data.insert(Data.begin(), SendData);
+    Data.insert(Data.begin(), 0);         					//Идентификатор Com-порта
+	DataReadyForSendingTrigger(Data);
+}
+//---------------------------------------------------------------------------
+void TComConnections::ConnectionErrorTrigger(int ErrorNumber)
+{
+
+}
+//---------------------------------------------------------------------------
+void TComConnections::HandingDataTrigger(std::vector<byte> Data)
+{
+	if(Data.size() == 0)
+    	return;
+
+    switch(Data[0])          								//Тип задачи для портов
+    {
+    	case SetPattern :                                            //Задать паттерн поиска
+            Data.erase(Data.begin());
+            AddPattern(Data);
+            return;
+        	break;
+
+        case SendData :                                            //Передать данные
+        	Data.erase(Data.begin());
+        	if(Data[0] <= ComConnections.size())				//Если номер Com - порта, которому предназначены данные существует
+            {
+                int ComNumber = Data[0];
+                Data.erase(Data.begin());
+                ComConnections[ComNumber]->SendData(Data);
+            }
+            return;
+        	break;
+
+        default :
+        	break;
+    }
+}
+//---------------------------------------------------------------------------
+void TComConnections::AddPattern(std::vector<byte> Pattern)
+{
+	Patterns.push_back(Pattern);
+}
+//---------------------------------------------------------------------------
+void TComConnections::SearchDevices()
+{
+    //TRegistryComPorts
+}
+

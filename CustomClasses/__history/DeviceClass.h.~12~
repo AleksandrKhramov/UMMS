@@ -1,0 +1,28 @@
+
+#ifndef DeviceClassH
+#define DeviceClassH
+/*
+	TMS3071Interface -
+
+*/
+//---------------------------------------------------------------------------
+//							  Built headers
+
+//---------------------------------------------------------------------------
+#pragma hdrstop
+//---------------------------------------------------------------------------
+// 								My headers
+#include "MS3071InterfaceClass.h"
+#include "UDPInterconnectionUIClass.h"
+//---------------------------------------------------------------------------
+class TDevice
+{
+private:
+public:
+	TMS3071Interface *MS3071Interface;
+
+	TDevice();
+	~TDevice();
+};
+//---------------------------------------------------------------------------
+#endif

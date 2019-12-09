@@ -1,0 +1,9 @@
+__history/*
+ConnectionService/*
+DeviceConnector/*
+LibrarySupport/*
+UMMS_UI/*
+*.txt
+*.tvsconfig
+*.groupproj
+*.local

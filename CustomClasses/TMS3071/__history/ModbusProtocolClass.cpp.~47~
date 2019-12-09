@@ -1,0 +1,125 @@
+//---------------------------------------------------------------------------
+#include "ModbusProtocolClass.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+//---------------------------------------------------------------------------
+//Конструктор
+TModbusProtocol::TModbusProtocol()
+{
+	/*unsigned char SearchPatterns[9][8] =
+    {
+    {0x01, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5B, 0xB2},
+    {0x02, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5B, 0x81},
+    {0x03, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5A, 0x50},
+    {0x04, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5B, 0xE7},
+    {0x05, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5A, 0x36},
+    {0x06, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5A, 0x05},
+    {0x07, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5B, 0xD4},
+    {0x08, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5B, 0x2B},
+    {0x09, 0x03, 0x9C, 0x83, 0x00, 0x01, 0x5A, 0xFA}
+    };   */
+
+
+}
+//---------------------------------------------------------------------------
+//Деструктор
+TModbusProtocol::~TModbusProtocol()
+{
+
+}
+//---------------------------------------------------------------------------
+unsigned short TModbusProtocol::MakeCRC16(std::vector<unsigned char> Buffer)
+{
+  unsigned short crc = 0xFFFF;
+  unsigned char t;
+
+  for (int pos = 0; pos < Buffer.size(); pos++)
+  {
+	t = Buffer[pos];
+	crc ^= t;
+
+	for (int i = 0; i < 8; i++) {
+		if ((crc & 0x0001) == 1){
+			crc >>= 1;
+			crc ^= 0xA001;
+		}
+		else
+			crc >>= 1;
+	}
+  }
+
+  return crc;
+}
+//---------------------------------------------------------------------------
+std::vector<unsigned char> TModbusProtocol::MakeMessage(unsigned char DeviceAdress, unsigned char Function, unsigned short MemoryAddress, std::vector<unsigned char> Data)
+{
+    std::vector<unsigned char> Buffer;
+
+    //Добавить адрес в начало
+    Buffer.push_back(DeviceAdress);
+
+    //Добавить функцию (чтение/запись)
+    Buffer.push_back(Function);
+
+	//Добавить адрес регистров
+	Buffer.push_back(MemoryAddress>>8);
+	Buffer.push_back((MemoryAddress<<8)>>8);
+
+    //Добавить длину данных
+    Buffer.push_back(Data.size());
+
+    //Добавить данные
+    for (int i = 0; i < Data.size(); i++)
+    	Buffer.push_back(Data[i]);
+
+
+	//Добавить контрольную сумму
+	unsigned short crc = MakeCRC16(Buffer);
+    Buffer.push_back(crc>>8);
+    Buffer.push_back((crc<<8)>>8);
+
+    //Вернуть сформированый пакет
+	return Buffer;
+}
+//---------------------------------------------------------------------------
+std::vector<unsigned char> TModbusProtocol::MakeMessage(unsigned char DeviceAdress, unsigned char Function, unsigned short MemoryAddress)
+{
+    std::vector<unsigned char> Buffer;
+
+    //Добавить адрес в начало
+    Buffer.push_back(DeviceAdress);
+
+    //Добавить функцию (чтение/запись)
+    Buffer.push_back(Function);
+
+	//Добавить адрес регистров
+	Buffer.push_back(MemoryAddress>>8);
+	Buffer.push_back((MemoryAddress<<8)>>8);
+
+    //Добавить данные(отсутствуют)
+    Buffer.push_back(0);
+    Buffer.push_back(1);
+
+	//Добавить контрольную сумму
+	unsigned short crc = MakeCRC16(Buffer);
+    Buffer.push_back(crc>>8);
+    Buffer.push_back((crc<<8)>>8);
+
+    //Вернуть сформированый пакет
+	return Buffer;
+}
+//---------------------------------------------------------------------------
+std::vector< std::vector<unsigned char> > TModbusProtocol::GetPatterns()
+{
+	std::vector< std::vector<unsigned char> > Patterns(0, std::vector<unsigned char> (0, 0));
+
+    matrix.
+
+	for(int i = 1; i <= 9; ++i)
+    {
+    	//std::vector<unsigned char>
+       //	MakeMessage(i, 0x03, 40067);
+		//Patterns->
+    }
+}
+//---------------------------------------------------------------------------

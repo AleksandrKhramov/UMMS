@@ -1,0 +1,40 @@
+//---------------------------------------------------------------------------
+#include "DevicesClass.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+//---------------------------------------------------------------------------
+//Конструктор
+TDevices::TDevices()
+{
+	MS3071Interface = new TMS3071Interface;
+    UDPInterconnection = new TUDPInterconnectionUI;
+
+    std::vector< std::vector<unsigned char> > SearchPatterns =  MS3071Interface->GetPatterns();
+
+    //Для этого создать отдельный класс
+    //-----------------------------------------------
+    std::vector<unsigned char> UDPParsMessage;
+
+    for(int PatternNumber = 0; PatternNumber < SearchPatterns.size(); ++PatternNumber)
+    {
+
+        UDPParsMessage.push_back(0);
+        UDPParsMessage.push_back(0);
+
+        for(int i = 0; i < SearchPatterns[PatternNumber].size(); ++i)
+        	UDPParsMessage.push_back(SearchPatterns[PatternNumber][i]);
+
+     	UDPInterconnection->SendBytesVector(UDPParsMessage);
+
+        UDPParsMessage.clear();
+    }
+    //-----------------------------------------------
+}
+//---------------------------------------------------------------------------
+//Деструктор
+TDevices::~TDevices()
+{
+	delete MS3071Interface;
+    delete UDPInterconnection;
+}
+//---------------------------------------------------------------------------

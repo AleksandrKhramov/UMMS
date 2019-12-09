@@ -1,0 +1,23 @@
+//---------------------------------------------------------------------------
+#include "ProtocolsClass.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+//---------------------------------------------------------------------------
+//Конструктор
+TProtocols::TProtocols()
+{
+	ModbusProtocol = new TModbusProtocol;
+    //ModbusProtocol->GetPatterns()
+    std::vector< std::vector<unsigned char> > Patterns(0, std::vector<unsigned char> (0, 0));
+}
+//---------------------------------------------------------------------------
+//Деструктор
+TProtocols::~TProtocols()
+{
+	delete ModbusProtocol;
+}
+//---------------------------------------------------------------------------
+std::vector< std::vector<unsigned char> > TProtocols::GetPatterns()
+{
+	std::vector< std::vector<unsigned char> > Patterns(0, std::vector<unsigned char> (0, 0));
+}

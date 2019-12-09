@@ -1,0 +1,176 @@
+//---------------------------------------------------------------------------
+#ifndef PropertiesH
+#define PropertiesH
+/*
+	Properties.h - это набор классов-свойств для класса TMS3071
+
+*/
+//---------------------------------------------------------------------------
+//							  Built headers
+#include <vector>
+//---------------------------------------------------------------------------
+#pragma hdrstop
+//---------------------------------------------------------------------------
+// 								My headers
+#include "AbstractValueClass.h"
+//---------------------------------------------------------------------------
+class TRealValues
+{
+private:
+	int ValuesQuantity;
+	std::vector<TAbstractValue *> RealValues;
+public:
+    void Set(std::vector<TAbstractValue> Values);
+    void Update(std::vector<TAbstractValue> Values);
+    std::vector<TAbstractValue> Read();
+
+	TRealValues();
+	~TRealValues();
+};
+//---------------------------------------------------------------------------
+class TName : public TAbstractValue
+{
+private:
+public:
+	TName();
+	~TName();
+};
+//---------------------------------------------------------------------------
+class TNumber : public TAbstractValue
+{
+private:
+public:
+	TNumber();
+	~TNumber();
+};
+//---------------------------------------------------------------------------
+class TAccuracyClass : public TAbstractValue
+{
+private:
+public:
+	TAccuracyClass();
+	~TAccuracyClass();
+};
+//---------------------------------------------------------------------------
+class TManufacturingData : public TAbstractValue
+{
+private:
+public:
+	TManufacturingData();
+	~TManufacturingData();
+};
+//---------------------------------------------------------------------------
+class TPassword : public TAbstractValue
+{
+private:
+public:
+	TPassword();
+	~TPassword();
+};
+//---------------------------------------------------------------------------
+class TRange : public TAbstractValue
+{
+private:
+public:
+	TRange();
+	~TRange();
+};
+//---------------------------------------------------------------------------
+class TStep : public TAbstractValue
+{
+private:
+public:
+	TStep();
+	~TStep();
+};
+//---------------------------------------------------------------------------
+class TEnteredValue : public TAbstractValue
+{
+private:
+public:
+	TEnteredValue();
+	~TEnteredValue();
+};
+//---------------------------------------------------------------------------
+class TScreenMode : public TAbstractValue
+{
+private:
+public:
+	TScreenMode();
+	~TScreenMode();
+};
+//---------------------------------------------------------------------------
+class TOutputMode : public TAbstractValue
+{
+private:
+public:
+	TOutputMode();
+	~TOutputMode();
+};
+//---------------------------------------------------------------------------
+class TDecadesState : public TAbstractValue
+{
+private:
+public:
+	TDecadesState();
+	~TDecadesState();
+};
+//---------------------------------------------------------------------------
+class TRealEnteredValue : public TAbstractValue
+{
+private:
+public:
+	TRealEnteredValue();
+	~TRealEnteredValue();
+};
+//---------------------------------------------------------------------------
+class TPercentageAccuracy : public TAbstractValue
+{
+private:
+public:
+	TPercentageAccuracy();
+	~TPercentageAccuracy();
+};
+//---------------------------------------------------------------------------
+class TPreviousEnteredValue : public TAbstractValue
+{
+private:
+public:
+	TPreviousEnteredValue();
+	~TPreviousEnteredValue();
+};
+//---------------------------------------------------------------------------
+class TAbsoluteAccuracy : public TAbstractValue
+{
+private:
+public:
+	TAbsoluteAccuracy();
+	~TAbsoluteAccuracy();
+};
+//---------------------------------------------------------------------------
+class TMaximalVoltage : public TAbstractValue
+{
+private:
+public:
+	TMaximalVoltage();
+	~TMaximalVoltage();
+};
+//---------------------------------------------------------------------------
+class TMaximalCurrent : public TAbstractValue
+{
+private:
+public:
+	TMaximalCurrent();
+	~TMaximalCurrent();
+};
+//---------------------------------------------------------------------------
+class TFirmwareVersion : public TAbstractValue
+{
+private:
+public:
+	TFirmwareVersion();
+	~TFirmwareVersion();
+};
+//---------------------------------------------------------------------------
+#endif
+

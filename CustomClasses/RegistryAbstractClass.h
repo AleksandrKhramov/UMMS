@@ -1,0 +1,29 @@
+
+#ifndef RegistryAbstractClassH
+#define RegistryAbstractClassH
+/*
+	TRegistryAbstract - это класс для работы с реестром.
+    Этот класс инстанциирует TRegistry с заданным в конструкторе ключём и корневым ключём HKEY_LOCAL_MACHINE.
+
+	Краткое и понятное описание работы с реестром:
+    http://www.cyberforum.ru/cpp-builder/thread159991.html
+*/
+//---------------------------------------------------------------------------
+//							  Built headers
+#include "registry.hpp"
+//---------------------------------------------------------------------------
+#pragma hdrstop
+//---------------------------------------------------------------------------
+// 								My headers
+
+//---------------------------------------------------------------------------
+class TRegistryAbstract
+{
+private:
+public:
+	TRegistry* Registry;
+	TRegistryAbstract(const char *Key);
+	/* TCustomRegistry.Destroy */    virtual ~TRegistryAbstract();
+};
+//---------------------------------------------------------------------------
+#endif

@@ -1,0 +1,37 @@
+//---------------------------------------------------------------------------
+#ifndef ComConnectionsClassH
+#define ComConnectionsClassH
+//---------------------------------------------------------------------------
+//							  Built headers
+
+//---------------------------------------------------------------------------
+#pragma hdrstop
+//---------------------------------------------------------------------------
+// 								My headers
+#include "ComConnectionClass.h"
+//---------------------------------------------------------------------------
+class TComConnections
+{
+	enum ExternalDataHanding
+    {
+        SetPattern,
+        SendData
+    };
+
+private:
+public:
+	TComponent* Owner;
+	std::vector<TComConnection *> ComConnection;
+    std::vector< std::vector<byte> > Patterns;
+
+    void AddPattern(std::vector<byte>);
+	void DataReadyTrigger(TComConnection *, std::vector<byte>);
+    void HandingDataTrigger(std::vector<byte>);
+    void ConnectionErrorTrigger(int ErrorNumber);
+    void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);
+
+    TComConnections(TComponent* _Owner);
+    ~TComConnections();
+};
+//---------------------------------------------------------------------------
+#endif
