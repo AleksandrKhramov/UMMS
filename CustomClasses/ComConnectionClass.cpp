@@ -17,8 +17,8 @@ TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumbe
     ComPort->ComNumber = _ComNumber;                     //Устанвливаем номер порта
     ComPort->Baud = BaudRate;                           //Скорость передачи
     ComPort->OnTriggerAvail = ComPortOnTriggerAvail;    //Задаём обработчик события по приходу данных
-    ComPort->Name = "ComPort" + IntToStr(ComNumber);
-
+    ComPort->Name = "ComPort" + IntToStr(_ComNumber);
+    ComNumber = _ComNumber;
     TimeoutTimer = new TTimer(Owner);                   //Создаём таймер для задержки обработки данных
     													//(ComPortOnTriggerAvail срабатывает нескольо раз перед тем, как придёт вся посылка)
     TimeoutTimer->Enabled = false;                      //И сразу отключем его

@@ -113,6 +113,7 @@ void TComConnections::UpdateActiveConnections()
 {
 	RemoveNonexistentConnections();
     AddNewConnections();
+    UpdateComLists();
 }
 //---------------------------------------------------------------------------
 void TComConnections::RemoveNonexistentConnections()
@@ -123,16 +124,18 @@ void TComConnections::RemoveNonexistentConnections()
     
 	for (int i = 0; i < ComConnections.size(); ++i) 
     {
-    	if(-1 == TempComNames->IndexOf(ComConnections[i]->ComName))
+    	if((-1 == TempComNames->IndexOf(ComConnections[i]->ComName)) || 
+        	(TempComNames->IndexOf(ComConnections[i]->ComName) != TempComPorts->IndexOf(ComConnections[i]->ComPort)))
         {
-        	if(TempComNames->IndexOf(ComConnections[i]->ComName) == TempComPorts->IndexOf(ComConnections[i]->ComPort))
-            {
-
-            }
-        }
-        else
-        {
-        	ComConnections.erase(ComConnections.begin() + i--); 
+        	ComNameList->Delete(ComNameList->IndexOf(ComConnections[i]->ComName));
+            ComPortList->Delete(ComPortList->IndexOf(ComConnections[i]->ComPort));
+            
+        	NotifyDeviceDeleted(ComConnections[i]->ComNumber);
+            
+            ComConnections[i]->~TComConnection();
+        	ComConnections.erase(ComConnections.begin() + i); 
+                
+            --i; 
         }	    
     }
     
@@ -141,6 +144,41 @@ void TComConnections::RemoveNonexistentConnections()
 //---------------------------------------------------------------------------
 void TComConnections::AddNewConnections()
 {
+	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
+	TStringList *TempComNames = RegistryComPorts->GetComNames();
+    TStringList *TempComPorts = RegistryComPorts->GetComPorts();
+
+	for (int i = 0; i < TempComNames->Count; ++i) 
+    {
+    	try
+        {
+            if(!IsComPortExists(TempComPorts->Strings[i]))
+            {
+                TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), DataReadyTrigger, ConnectionErrorTrigger); 
+            	
+            }
+        }
+        catch(...)
+        {
+        	
+        }
+    }
+
+	delete RegistryComPorts;    		
+}
+//---------------------------------------------------------------------------
+void TComConnections::NotifyDeviceDeleted(int ComNumber)
+{
 
 }
 //---------------------------------------------------------------------------
+void TComConnections::UpdateComLists()
+{
+
+}
+//---------------------------------------------------------------------------
+void TComConnections::IsComPortExists(int ComNumber)
+{
+
+}
+

@@ -34,6 +34,10 @@ private:
     bool IsComListUpdated();
     void UpdateActiveConnections();
     void RemoveNonexistentConnections();
+    void AddNewConnections();
+	void NotifyDeviceDeleted(int ComNumber);
+    void UpdateComLists();
+    void IsComPortExists(int ComNumber);
 public:
     void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);
