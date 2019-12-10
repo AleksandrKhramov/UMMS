@@ -132,9 +132,8 @@ void TComConnections::RemoveNonexistentConnections()
         }
         else
         {
-        	ComConnections.erase(ComConnections.begin() + i);
-        }
-    	    
+        	ComConnections.erase(ComConnections.begin() + i--); 
+        }	    
     }
     
 	delete RegistryComPorts;	

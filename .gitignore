@@ -7,3 +7,4 @@ UMMS_UI/*
 *.tvsconfig
 *.groupproj
 *.local
+CustomClasses/__history/*
