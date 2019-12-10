@@ -6,8 +6,7 @@
 TRegistryComPorts::TRegistryComPorts()
 	: TRegistryAbstract("HARDWARE\\DEVICEMAP\\SERIALCOMM")
 {
-	ComNameList = new TStringList;
-    ComPortList = new TStringList;
+
 }
 //---------------------------------------------------------------------------
 //Деструктор
@@ -19,7 +18,7 @@ TRegistryComPorts::~TRegistryComPorts()
 //---------------------------------------------------------------------------
 TStringList *TRegistryComPorts::GetComNames()
 {
-
+	ComNameList = new TStringList;
     Registry->GetValueNames(ComNameList);
     return ComNameList;
 }
@@ -27,7 +26,7 @@ TStringList *TRegistryComPorts::GetComNames()
 TStringList *TRegistryComPorts::GetComPorts()
 {
 	GetComNames();
-
+    ComPortList = new TStringList;
     for(int i = 0; i < ComNameList->Count ; i++)
     {
         ComPortList->Add(Registry->ReadString(ComNameList->Strings[i]).SubString(4, 1));

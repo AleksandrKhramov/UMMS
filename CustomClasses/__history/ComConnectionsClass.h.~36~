@@ -9,6 +9,7 @@
 //---------------------------------------------------------------------------
 // 								My headers
 #include "ComConnectionClass.h"
+#include "RegistryComPortsClass.h"
 //---------------------------------------------------------------------------
 class TComConnections
 {
@@ -19,14 +20,20 @@ class TComConnections
     };
 
 private:
-    void AddPattern(std::vector<byte>);
-    void HandingDataTrigger(std::vector<byte>);
-public:
-	void DataReadyTrigger(TComConnection *, std::vector<byte>);
 	TComponent* Owner;
-	std::vector<TComConnection *> ComConnection;
+	std::vector<TComConnection *> ComConnections;
     std::vector< std::vector<byte> > Patterns;
+    TStringList *UnusedComNames;
+
+    void SearchDevices();
+    void AddPattern(std::vector<byte>);
+	void DataReadyTrigger(TComConnection *, std::vector<byte>);
     void ConnectionErrorTrigger(int ErrorNumber);
+    bool IsAllActiveConnectionsExists();
+    bool IsComListUpdated();
+    void UpdateActiveConnections();
+public:
+    void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);
 
     TComConnections(TComponent* _Owner);

@@ -65,3 +65,76 @@ void TComConnections::AddPattern(std::vector<byte> Pattern)
 {
 	Patterns.push_back(Pattern);
 }
+//---------------------------------------------------------------------------
+void TComConnections::SearchDevices()
+{
+    if(!IsAllActiveConnectionsExists() && IsComListUpdated())
+    {
+     	UpdateActiveConnections();
+    }
+}
+//---------------------------------------------------------------------------
+bool TComConnections::IsAllActiveConnectionsExists()
+{
+	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
+	TStringList *TempComNames = RegistryComPorts->GetComNames();
+
+	for(int i = 0; i < ComConnections.size(); ++i)
+    {
+		if(-1 == TempComNames->IndexOf(ComConnections[i]->ComName))
+        {
+            delete RegistryComPorts;
+            return false;
+        }
+    }
+
+    delete RegistryComPorts;
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TComConnections::IsComListUpdated()
+{
+	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
+	TStringList *TempComNames = RegistryComPorts->GetComNames();
+    TStringList *TempComPorts = RegistryComPorts->GetComPorts();
+
+	if(ComNameList->Strings == TempComNames->Strings)
+    	if(ComPortList->Strings == TempComPorts->Strings)
+        {
+        	delete RegistryComPorts;
+       		return false;
+        }
+
+    delete RegistryComPorts;
+    return true;
+}
+//---------------------------------------------------------------------------
+void TComConnections::UpdateActiveConnections()
+{
+	RemoveNonexistentConnections();
+    AddNewConnections();
+}
+//---------------------------------------------------------------------------
+void TComConnections::RemoveNonexistentConnections()
+{
+	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
+	TStringList *TempComNames = RegistryComPorts->GetComNames();
+    TStringList *TempComPorts = RegistryComPorts->GetComPorts();
+    
+	for (int i = 0; i < ComConnections.size(); ++i) 
+    {
+    	if(-1 == TempComNames->IndexOf(ComConnections[i]->ComName))
+        {
+
+        }
+    	    
+    }
+    
+	delete RegistryComPorts;	
+}
+//---------------------------------------------------------------------------
+void TComConnections::AddNewConnections()
+{
+
+}
+//---------------------------------------------------------------------------
