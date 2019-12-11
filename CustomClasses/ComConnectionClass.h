@@ -10,7 +10,7 @@
 #pragma hdrstop
 //---------------------------------------------------------------------------
 // 								My headers
-
+#include "ComConnectionErrors.cpp"
 //---------------------------------------------------------------------------
 class TComConnection
 {
@@ -19,7 +19,6 @@ public:
     TApdComPort* ComPort;
     TTimer* TimeoutTimer;
     std::vector<byte> RecievedData;
-    enum Errors {OpenError, DataPassError};
     String ComName;
     int ComNumber;
 
@@ -27,7 +26,7 @@ public:
     void __fastcall TimoutTimerOnTimer(TObject *Sender);
 
     void (__closure *DataReadyTrigger)(TComConnection *, std::vector<byte>);
-    void (__closure *ConnectionErrorTrigger)(int ErrorNumber);
+    void (__closure *ConnectionErrorTrigger)(TComConnection *, int ErrorNumber);
 
     void SendData(std::vector<byte> Data);
 
@@ -35,7 +34,7 @@ public:
                     String ComName,
                     int ComNumber,
     				void (__closure *_DataReadyTrigger)(TComConnection *, std::vector<byte>),
-                    void (__closure *_ConnectionErrorTrigger)(int ErrorNumber),
+                    void (__closure *_ConnectionErrorTrigger)(TComConnection *, int ErrorNumber),
      				int BaudRate = 9600);
 
     ~TComConnection();                                                            	//Деструктор

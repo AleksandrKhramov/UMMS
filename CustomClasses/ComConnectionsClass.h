@@ -10,6 +10,8 @@
 // 								My headers
 #include "ComConnectionClass.h"
 #include "RegistryComPortsClass.h"
+#include "IteratorByPatternsClass.h"
+#include "ComConnectionErrors.cpp"
 //---------------------------------------------------------------------------
 class TComConnections
 {
@@ -22,14 +24,13 @@ class TComConnections
 private:
 	TComponent* Owner;
 	std::vector<TComConnection *> ComConnections;
-    std::vector< std::vector<byte> > Patterns;
+    TIteratorByPatterns *IteratorByPatterns;
     TStringList *ComNameList;
     TStringList *ComPortList;
 
     void SearchDevices();
-    void AddPattern(std::vector<byte>);
 	void DataReadyTrigger(TComConnection *, std::vector<byte>);
-    void ConnectionErrorTrigger(int ErrorNumber);
+    void ConnectionErrorTrigger(TComConnection *, int ErrorNumber);
     bool IsAllActiveConnectionsExists();
     bool IsComListUpdated();
     void UpdateActiveConnections();
@@ -37,7 +38,9 @@ private:
     void AddNewConnections();
 	void NotifyDeviceDeleted(int ComNumber);
     void UpdateComLists();
-    void IsComPortExists(int ComNumber);
+    bool IsComPortExists(int ComNumber);
+    bool IsListsIdentical(TStringList *, TStringList *);
+    int IndexOfComConnection(TComConnection *);
 public:
     void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);

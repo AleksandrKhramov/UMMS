@@ -1,6 +1,4 @@
 //---------------------------------------------------------------------------
-#pragma hdrstop
-
 #include "ComConnectionClass.h"
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
@@ -10,7 +8,7 @@
 //Конструктор
 TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumber,
 								void (__closure *_DataReadyTrigger)(TComConnection *, std::vector<byte>),
-                                void (__closure *_ConnectionErrorTrigger)(int ErrorNumber), int BaudRate)
+                                void (__closure *_ConnectionErrorTrigger)(TComConnection *, int), int BaudRate)
 {
 	ComPort = new TApdComPort(Owner);                   //Создаём компонент COM-порта для работы с COM-портом
 	ComPort->AutoOpen = false;  						//Автоматическое подключение к порту отключено
@@ -36,7 +34,7 @@ TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumbe
     }
     catch(...)
     {
-    	ConnectionErrorTrigger(OpenError);                    	//Ошибка при открытии порта
+    	ConnectionErrorTrigger(this, ComConnectionOpenError);                    	//Ошибка при открытии порта
     }
 }
 //---------------------------------------------------------------------------
@@ -85,7 +83,7 @@ void TComConnection::SendData(std::vector<byte> Data)
     }
     catch(...)
     {
-    	ConnectionErrorTrigger(DataPassError);             		//Ошибка передачи
+    	ConnectionErrorTrigger(this, ComConnectionDataPassError);             		//Ошибка передачи
     }
 
     delete [] Buf;
