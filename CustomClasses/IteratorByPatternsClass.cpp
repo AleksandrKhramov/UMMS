@@ -19,46 +19,78 @@ void TIteratorByPatterns::AddConnectionOnIterating(TComConnection *ComConnection
 {
 	if(ComConnection != NULL)
     {
+        TConnectionWithPatternNumber *ConnectionWithPatternNumber = new TConnectionWithPatternNumber(ComConnection, 0);
+        ConnectionsWithPatternNumbers.push_back(ConnectionWithPatternNumber);
 
-		ComConnections.push_back(ComConnection);
-        ConnectionsPatternNumbers.
         if(Patterns.size() != 0)
-       	 	ComConnection->SendData(Patterns[0]);
+       	 	ComConnection->SendData(Patterns[ConnectionWithPatternNumber->PatternNumber]);
     }
 }
 //---------------------------------------------------------------------------
 void TIteratorByPatterns::AddPattern(std::vector<byte> Pattern)
 {
 	Patterns.push_back(Pattern);
-
 }
 //---------------------------------------------------------------------------
 bool TIteratorByPatterns::IsConnectionOnIterating(TComConnection *ComConnection)
 {
-
+    if(IndexOfComConnection(ComConnection) >= 0)
+    {
+    	return true;
+    }
+    return false;
 }
 //---------------------------------------------------------------------------
 bool TIteratorByPatterns::NextPatternForConnection(TComConnection *ComConnection)
 {
-	/* if(There is not patterns for ComConnection) */
-		return false;
+	int ConectionIndex = IndexOfComConnection(ComConnection);
+
+    if(ConectionIndex >= 0)
+    {
+        if(ConnectionsWithPatternNumbers[ConectionIndex]->PatternNumber < (Patterns.size() - 1))
+        {
+        	ConnectionsWithPatternNumbers[ConectionIndex]->PatternNumber += 1;
+            ConnectionsWithPatternNumbers[ConectionIndex]->ComConnection->SendData(Patterns[ConnectionsWithPatternNumbers[ConectionIndex]->PatternNumber]);
+        	return true;
+        }
+        else
+        	return false;
+    }
+    return false;
 }
 //---------------------------------------------------------------------------
 bool TIteratorByPatterns::RemoveConnection(TComConnection *ComConnection)
 {
-    for (int i = 0; i < ComConnections.size(); ++i)
+	int ConectionIndex = IndexOfComConnection(ComConnection);
+    if(ConectionIndex >= 0)
     {
-     	if(ComConnections[i] == ComConnection)
-        {
-        	ComConnections.erase(ComConnections.begin() + i);
-            return true;
-        }
+        ConnectionsWithPatternNumbers.erase(ConnectionsWithPatternNumbers.begin() + ConectionIndex);
+        return true;
     }
     return false;
 }
 //---------------------------------------------------------------------------
 void TIteratorByPatterns::ClearPatterns()
 {
-
+    Patterns.clear();
 }
  //---------------------------------------------------------------------------
+int TIteratorByPatterns::IndexOfComConnection(TComConnection *ComConnection)
+{
+    for (int i = 0; i < ConnectionsWithPatternNumbers.size(); ++i)
+    {
+    	if(ConnectionsWithPatternNumbers[i]->ComConnection == ComConnection)
+        {
+        	return i;
+        }
+    }
+    return -1;
+}
+//---------------------------------------------------------------------------
+void TIteratorByPatterns::ClearConnections()
+{
+	ConnectionsWithPatternNumbers.clear();
+
+}
+//---------------------------------------------------------------------------
+
