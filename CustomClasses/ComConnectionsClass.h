@@ -12,15 +12,10 @@
 #include "RegistryComPortsClass.h"
 #include "IteratorByPatternsClass.h"
 #include "ComConnectionErrors.cpp"
+#include "ExternalDataHanding.cpp"
 //---------------------------------------------------------------------------
 class TComConnections
 {
-	enum ExternalDataHanding
-    {
-        SetPattern,
-        SendData
-    };
-
 private:
 	TComponent* Owner;
 	std::vector<TComConnection *> ComConnections;
@@ -36,11 +31,12 @@ private:
     void UpdateActiveConnections();
     void RemoveNonexistentConnections();
     void AddNewConnections();
-	void NotifyDeviceDeleted(int ComNumber);
+	void NotifyConnectionRemoved(int ComNumber);
     void UpdateComLists();
     bool IsComPortExists(int ComNumber);
     bool IsListsIdentical(TStringList *, TStringList *);
-    int IndexOfComConnection(TComConnection *);
+    int  IndexOfComConnection(TComConnection *);
+    void RemoveConnection(TComConnection *);
 public:
     void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);

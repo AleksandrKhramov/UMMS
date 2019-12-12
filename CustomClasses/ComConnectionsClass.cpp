@@ -26,14 +26,16 @@ void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vecto
 {
     if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
     {
-        	//Connection correnspond to patterns
-            /*
-            	Handing of corresponding
-            */
+    	Data.insert(Data.begin(), ComConnection->ComNumber);
+        Data.insert(Data.begin(), DataHandingNewConnection);
+        Data.insert(Data.begin(), 0);         					//Идентификатор соединения (в данном случае Com-порта)
+        DataReadyForSendingTrigger(Data);
+        IteratorByPatterns->RemoveConnection(ComConnection);
     	return;
     }
+
     Data.insert(Data.begin(), ComConnection->ComNumber);
-    Data.insert(Data.begin(), SendData);
+    Data.insert(Data.begin(), DataHandingSendData);
     Data.insert(Data.begin(), 0);         					//Идентификатор соединения (в данном случае Com-порта)
 	DataReadyForSendingTrigger(Data);
 }
@@ -58,14 +60,15 @@ void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int 
         	if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
             {
             	if(!IteratorByPatterns->NextPatternForConnection(ComConnection))
-                	;//Connection dont correnspond to patterns
+                {
+                	IteratorByPatterns->RemoveConnection(ComConnection);
 
+                }
             }
         	break;
         default :
         	break;
     }
-
 }
 //---------------------------------------------------------------------------
 void TComConnections::HandingDataTrigger(std::vector<byte> Data)
@@ -75,13 +78,14 @@ void TComConnections::HandingDataTrigger(std::vector<byte> Data)
 
     switch(Data[0])          								//Тип задачи для портов
     {
-    	case SetPattern :                                            //Задать паттерн поиска
+    	case DataHandingSetPattern :
             Data.erase(Data.begin());
+
             IteratorByPatterns->AddPattern(Data);
             return;
         	break;
 
-        case SendData :                                            //Передать данные
+        case DataHandingSendData :
         	Data.erase(Data.begin());
         	if(Data[0] <= ComConnections.size())				//Если номер Com - порта, которому предназначены данные существует
             {
@@ -153,7 +157,7 @@ void TComConnections::RemoveNonexistentConnections()
 	TStringList *TempComNames = RegistryComPorts->GetComNames();
     TStringList *TempComPorts = RegistryComPorts->GetComPorts();
     
-	for (int i = 0; i < ComConnections.size(); ++i) 
+	for (int i = 0; i < ComConnections.size(); ++i)
     {
     	if((-1 == TempComNames->IndexOf(ComConnections[i]->ComName)) ||
         	(TempComNames->IndexOf(ComConnections[i]->ComName) != TempComPorts->IndexOf(IntToStr(ComConnections[i]->ComNumber))))
@@ -161,15 +165,15 @@ void TComConnections::RemoveNonexistentConnections()
         	ComNameList->Delete(ComNameList->IndexOf(ComConnections[i]->ComName));
             ComPortList->Delete(ComPortList->IndexOf(IntToStr(ComConnections[i]->ComNumber)));
             
-        	NotifyDeviceDeleted(ComConnections[i]->ComNumber);
+        	NotifyConnectionRemoved(ComConnections[i]->ComNumber);
             
             ComConnections[i]->~TComConnection();
         	ComConnections.erase(ComConnections.begin() + i); 
-                
+
             --i; 
         }	    
     }
-    
+
 	delete RegistryComPorts;	
 }
 //---------------------------------------------------------------------------
@@ -199,7 +203,7 @@ void TComConnections::AddNewConnections()
 	delete RegistryComPorts;
 }
 //---------------------------------------------------------------------------
-void TComConnections::NotifyDeviceDeleted(int ComNumber)
+void TComConnections::NotifyConnectionRemoved(int ComNumber)
 {
 
 }
@@ -260,4 +264,16 @@ int TComConnections::IndexOfComConnection(TComConnection *ComConnection)
     }
     return -1;
 }
+//---------------------------------------------------------------------------
+void TComConnections::RemoveConnection(TComConnection *ComConnection)
+{
+	int ConnectionIndex = IndexOfComConnection(ComConnection);
+    if (ConnectionIndex >= 0)
+    {
+     	ComConnections[ConnectionIndex]->~TComConnection();
+        ComConnections.erase(ComConnections.begin() + ConnectionIndex);
+    }
+}
+//---------------------------------------------------------------------------
+
 
