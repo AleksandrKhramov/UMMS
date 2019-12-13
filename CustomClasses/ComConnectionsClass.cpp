@@ -9,6 +9,14 @@ TComConnections::TComConnections(TComponent* _Owner)
 	DataReadyForSendingTrigger = NULL;
 	Owner = _Owner;
     IteratorByPatterns = new TIteratorByPatterns;
+
+    SearchingTimer = new TTimer(Owner);
+
+    SearchingTimer->Enabled = false;
+    SearchingTimer->Interval = 500;
+    SearchingTimer->OnTimer = SearchingTimerOnTimer;
+    SearchingTimer->Name = "SearchingTimerForComPort";
+    SearchingTimer->Enabled = true;
 }
 //---------------------------------------------------------------------------
 //Деструктор
@@ -19,6 +27,7 @@ TComConnections::~TComConnections()
     ComConnections.clear();
     ComConnections.~vector();
 
+    delete SearchingTimer;
     delete IteratorByPatterns;
 }
 //---------------------------------------------------------------------------
@@ -26,18 +35,13 @@ void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vecto
 {
     if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
     {
-    	Data.insert(Data.begin(), ComConnection->ComNumber);
-        Data.insert(Data.begin(), DataHandingNewConnection);
-        Data.insert(Data.begin(), 0);         					//Идентификатор соединения (в данном случае Com-порта)
-        DataReadyForSendingTrigger(Data);
+        ExternalSend(DataHandingNewConnection, ComConnection->ComNumber, Data);
+        NotifyDeviceConnected(ComConnection);
         IteratorByPatterns->RemoveConnection(ComConnection);
     	return;
     }
 
-    Data.insert(Data.begin(), ComConnection->ComNumber);
-    Data.insert(Data.begin(), DataHandingSendData);
-    Data.insert(Data.begin(), 0);         					//Идентификатор соединения (в данном случае Com-порта)
-	DataReadyForSendingTrigger(Data);
+    ExternalSend(DataHandingSendData), ComConnection->ComNumber, Data);
 }
 //---------------------------------------------------------------------------
 void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int ErrorNumber)
@@ -52,6 +56,7 @@ void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int 
             if (-1 != Index)
             {
                 ComConnection->~TComConnection();
+                ComConnection = NULL;
                 ComConnections.erase(ComConnections.begin() + Index);
             }
         	break;
@@ -62,7 +67,12 @@ void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int 
             	if(!IteratorByPatterns->NextPatternForConnection(ComConnection))
                 {
                 	IteratorByPatterns->RemoveConnection(ComConnection);
-
+                    if (-1 != Index)
+                    {
+                        ComConnection->~TComConnection();
+                        ComConnection = NULL;
+                        ComConnections.erase(ComConnections.begin() + Index);
+                    }
                 }
             }
         	break;
@@ -112,11 +122,11 @@ void TComConnections::SearchDevices()
 bool TComConnections::IsAllActiveConnectionsExists()
 {
 	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
-	TStringList *TempComNames = RegistryComPorts->GetComNames();
+	TStringList *TempComPorts = RegistryComPorts->GetComPorts();
 
 	for(int i = 0; i < ComConnections.size(); ++i)
     {
-		if(-1 == TempComNames->IndexOf(ComConnections[i]->ComName))
+		if(-1 == TempComPorts->IndexOf(IntToStr(ComConnections[i]->ComNumber)))
         {
             delete RegistryComPorts;
             return false;
@@ -190,8 +200,11 @@ void TComConnections::AddNewConnections()
             if(!IsComPortExists(StrToInt(TempComPorts->Strings[i])))
             {
                 TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), DataReadyTrigger, ConnectionErrorTrigger);
-                ComConnections.push_back(TempComConnection);
-                IteratorByPatterns->AddConnectionOnIterating(TempComConnection);
+                if(TempComConnection != NULL)
+                {
+                    ComConnections.push_back(TempComConnection);
+                    IteratorByPatterns->AddConnectionOnIterating(TempComConnection);
+                }
             }
         }
         catch(...)
@@ -205,7 +218,7 @@ void TComConnections::AddNewConnections()
 //---------------------------------------------------------------------------
 void TComConnections::NotifyConnectionRemoved(int ComNumber)
 {
-
+    ExternalSend(DataHandingConnectionRemoved, ComNumber);
 }
 //---------------------------------------------------------------------------
 void TComConnections::UpdateComLists()
@@ -275,5 +288,28 @@ void TComConnections::RemoveConnection(TComConnection *ComConnection)
     }
 }
 //---------------------------------------------------------------------------
+void __fastcall TComConnections::SearchingTimerOnTimer(TObject *Sender)
+{
+    SearchingTimer->Enabled = false;
+	SearchDevices();
+    SearchingTimer->Enabled = true;
+}
+//---------------------------------------------------------------------------
+void TComConnections::ExternalSend(int DataHanding, int ComNumber, std::vector<byte> Data)
+{
+	std::vector<byte> SendData;
+    if(Data.size())
+    	SendData = Data;
+
+    SendData.insert(Data.begin(), ComNumber);
+    SendData.insert(Data.begin(), DataHandingSendData);
+    SendData.insert(Data.begin(), ComPortConnectionType);
+	DataReadyForSendingTrigger(SendData);
+}
+//---------------------------------------------------------------------------
+void NotifyDeviceConnected(TComConnection *ComConnection)
+{
+    ExternalSend(DataHandingNewConnection, ComConnection->ComNumber);
+}
 
 

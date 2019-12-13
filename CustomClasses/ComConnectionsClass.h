@@ -13,11 +13,13 @@
 #include "IteratorByPatternsClass.h"
 #include "ComConnectionErrors.cpp"
 #include "ExternalDataHanding.cpp"
+#include "ConnectionTypes.cpp"
 //---------------------------------------------------------------------------
 class TComConnections
 {
 private:
 	TComponent* Owner;
+    TTimer* SearchingTimer;
 	std::vector<TComConnection *> ComConnections;
     TIteratorByPatterns *IteratorByPatterns;
     TStringList *ComNameList;
@@ -37,6 +39,8 @@ private:
     bool IsListsIdentical(TStringList *, TStringList *);
     int  IndexOfComConnection(TComConnection *);
     void RemoveConnection(TComConnection *);
+    void ExternalSend(int DataHanding, int ComNumber, std::vector<byte> Data = (std::vector<byte>)NULL);
+    void __fastcall SearchingTimerOnTimer(TObject *Sender);
 public:
     void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);

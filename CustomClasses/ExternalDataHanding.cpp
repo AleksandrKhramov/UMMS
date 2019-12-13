@@ -5,7 +5,8 @@ enum ExternalDataHanding
 {
     DataHandingSetPattern,
     DataHandingSendData,
-    DataHandingNewConnection
+    DataHandingNewConnection,
+    DataHandingConnectionRemoved
 };
 #endif
 
