@@ -40,7 +40,6 @@ void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vecto
 {
     if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
     {
-        ExternalSend(DataHandingNewConnection, ComConnection->ComNumber, Data);
         NotifyDeviceConnected(ComConnection);
         IteratorByPatterns->RemoveConnection(ComConnection);
     	return;
@@ -220,7 +219,6 @@ void TComConnections::AddNewConnections()
                     ComConnections.push_back(TempComConnection);
                     IteratorByPatterns->AddConnectionOnIterating(TempComConnection);
                 }
-
             }
         }
         catch(...)
