@@ -31,6 +31,9 @@ TComConnections::~TComConnections()
 
     delete SearchingTimer;
     delete IteratorByPatterns;
+
+    delete ComNameList;
+    delete ComPortList;
 }
 //---------------------------------------------------------------------------
 void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vector<byte> Data)
@@ -64,6 +67,9 @@ void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int 
         	break;
         case ComConnectionDataPassError :
 
+
+        	break;
+        case ComConnectionDataPassExpectationError :
         	if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
             {
             	if(!IteratorByPatterns->NextPatternForConnection(ComConnection))
@@ -92,8 +98,14 @@ void TComConnections::HandingDataTrigger(std::vector<byte> Data)
     {
     	case DataHandingSetPattern :
             Data.erase(Data.begin());
-
             IteratorByPatterns->AddPattern(Data);
+            IteratorByPatterns->ClearConnections();
+
+
+            for (int ComIndex = 0; ComIndex < ComConnections.size(); ++ComIndex)
+            {
+            	IteratorByPatterns->AddConnectionOnIterating(ComConnections[ComIndex]);
+            }
             return;
         	break;
 
@@ -168,7 +180,7 @@ void TComConnections::RemoveNonexistentConnections()
 	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
 	TStringList *TempComNames = RegistryComPorts->GetComNames();
     TStringList *TempComPorts = RegistryComPorts->GetComPorts();
-    
+
 	for (int i = 0; i < ComConnections.size(); ++i)
     {
     	if((-1 == TempComNames->IndexOf(ComConnections[i]->ComName)) ||
@@ -202,7 +214,7 @@ void TComConnections::AddNewConnections()
 
             if(!IsComPortExists(StrToInt(TempComPorts->Strings[i])))
             {
-                TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), DataReadyTrigger, ConnectionErrorTrigger);
+                TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
                 if(TempComConnection != NULL)
                 {
                     ComConnections.push_back(TempComConnection);

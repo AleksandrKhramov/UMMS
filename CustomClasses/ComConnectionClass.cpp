@@ -6,7 +6,7 @@
 #pragma link "OoMisc"
 //---------------------------------------------------------------------------
 //Конструктор
-TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumber,
+TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumber, int ExpectationDelay,
 								void (__closure *_DataReadyTrigger)(TComConnection *, std::vector<byte>),
                                 void (__closure *_ConnectionErrorTrigger)(TComConnection *, int), int BaudRate)
 {
@@ -23,6 +23,12 @@ TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumbe
     TimeoutTimer->Interval = 50;                        //устанавливаем интервал срабатывания
     TimeoutTimer->OnTimer = TimoutTimerOnTimer;         //Задаём обработчик события таймера
     TimeoutTimer->Name = "TimeoutTimerForComPort" + IntToStr(ComNumber);
+
+    ExpectationTimer = new TTimer(Owner);
+    ExpectationTimer->Enabled = false;
+    ExpectationTimer->Interval = ExpectationDelay;
+    ExpectationTimer->OnTimer = ExpectationTimerOnTimer;
+    ExpectationTimer->Name = "ExpectationTimerForComPort" + IntToStr(ComNumber);
 
     ComName = _ComName;
     DataReadyTrigger = _DataReadyTrigger;                             //Задаём обработчик принятого пакета
@@ -52,6 +58,7 @@ TComConnection::~TComConnection()
 void __fastcall TComConnection::ComPortOnTriggerAvail(TObject *CP, WORD Count)
 {
 	TimeoutTimer->Enabled = false;
+    ExpectationTimer->Enabled = false;
 
     byte c;
 
@@ -66,8 +73,16 @@ void __fastcall TComConnection::ComPortOnTriggerAvail(TObject *CP, WORD Count)
 void __fastcall TComConnection::TimoutTimerOnTimer(TObject *Sender)
 {
 	TimeoutTimer->Enabled = false;
+    ExpectationTimer->Enabled = false;
    	DataReadyTrigger(this, RecievedData);
     RecievedData.clear();
+}
+//---------------------------------------------------------------------------
+void __fastcall TComConnection::ExpectationTimerOnTimer(TObject *Sender)
+{
+	TimeoutTimer->Enabled = false;
+    ExpectationTimer->Enabled = false;
+    ConnectionErrorTrigger(this, ComConnectionDataPassExpectationError);
 }
 //---------------------------------------------------------------------------
 void TComConnection::SendData(std::vector<byte> Data)
@@ -80,10 +95,11 @@ void TComConnection::SendData(std::vector<byte> Data)
     try
     {
     	ComPort->PutBlock(Buf, Data.size()); 					//Отправляем данные
+        ExpectationTimer->Enabled = true;
     }
     catch(...)
     {
-    	ConnectionErrorTrigger(this, ComConnectionDataPassError);             		//Ошибка передачи
+    	ConnectionErrorTrigger(this, ComConnectionDataPassError);//Ошибка передачи
     }
 
     delete [] Buf;

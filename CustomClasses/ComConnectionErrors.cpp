@@ -4,7 +4,8 @@
 enum ComConnectionErrors
 {
     ComConnectionOpenError,
-    ComConnectionDataPassError
+    ComConnectionDataPassError,
+    ComConnectionDataPassExpectationError
 };
 #endif
 

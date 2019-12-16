@@ -102,8 +102,8 @@ std::vector<unsigned char> TModbusProtocol::MakeMessage(unsigned char DeviceAdre
 
 	//Добавить контрольную сумму
 	unsigned short crc = MakeCRC16(Buffer);
-    Buffer.push_back((crc<<8)>>8);
     Buffer.push_back(crc>>8);
+    Buffer.push_back((crc<<8)>>8);
 
     //Вернуть сформированый пакет
 	return Buffer;

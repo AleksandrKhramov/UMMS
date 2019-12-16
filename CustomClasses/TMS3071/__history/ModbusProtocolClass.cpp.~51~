@@ -32,10 +32,15 @@ unsigned short TModbusProtocol::MakeCRC16(std::vector<unsigned char> Buffer)
 {
   unsigned short crc = 0xFFFF;
   unsigned char t;
-  
+  byte *Buf = new byte(Data.size());
+
+  for (int i = 0; i < Buffer.size(); ++i) 
+  {
+  	Buf[i] = Buffer[i];    
+  }
   for (int pos = 0; pos < Buffer.size(); pos++)
   {
-	t = Buffer[pos];
+	t = Buf[pos];
 	crc ^= t;
 
 	for (int i = 0; i < 8; i++) {
@@ -75,8 +80,8 @@ std::vector<unsigned char> TModbusProtocol::MakeMessage(unsigned char DeviceAdre
 
 	//Добавить контрольную сумму
 	unsigned short crc = MakeCRC16(Buffer);
-    Buffer.push_back((crc<<8)>>8);
     Buffer.push_back(crc>>8);
+    Buffer.push_back((crc<<8)>>8);
 
     //Вернуть сформированый пакет
 	return Buffer;
@@ -102,8 +107,8 @@ std::vector<unsigned char> TModbusProtocol::MakeMessage(unsigned char DeviceAdre
 
 	//Добавить контрольную сумму
 	unsigned short crc = MakeCRC16(Buffer);
-    Buffer.push_back((crc<<8)>>8);
     Buffer.push_back(crc>>8);
+    Buffer.push_back((crc<<8)>>8);
 
     //Вернуть сформированый пакет
 	return Buffer;
