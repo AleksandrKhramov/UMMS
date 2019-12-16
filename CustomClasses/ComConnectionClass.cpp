@@ -10,8 +10,8 @@ TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumbe
 								void (__closure *_DataReadyTrigger)(TComConnection *, std::vector<byte>),
                                 void (__closure *_ConnectionErrorTrigger)(TComConnection *, int), int BaudRate)
 {
-	ComPort = new TApdComPort(Owner);                   //Создаём компонент COM-порта для работы с COM-портом
-	ComPort->AutoOpen = false;  						//Автоматическое подключение к порту отключено
+    ComPort = new TApdComPort(Owner);                   //Создаём компонент COM-порта для работы с COM-портом
+    ComPort->AutoOpen = false;  						//Автоматическое подключение к порту отключено
     ComPort->ComNumber = _ComNumber;                     //Устанвливаем номер порта
     ComPort->Baud = BaudRate;                           //Скорость передачи
     ComPort->OnTriggerAvail = ComPortOnTriggerAvail;    //Задаём обработчик события по приходу данных

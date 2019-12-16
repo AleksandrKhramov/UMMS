@@ -10,8 +10,10 @@ TComConnections::TComConnections(TComponent* _Owner)
 	Owner = _Owner;
     IteratorByPatterns = new TIteratorByPatterns;
 
-    SearchingTimer = new TTimer(Owner);
+    ComNameList = new TStringList();
+    ComPortList = new TStringList();
 
+    SearchingTimer = new TTimer(Owner);
     SearchingTimer->Enabled = false;
     SearchingTimer->Interval = 500;
     SearchingTimer->OnTimer = SearchingTimerOnTimer;
@@ -41,7 +43,7 @@ void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vecto
     	return;
     }
 
-    ExternalSend(DataHandingSendData), ComConnection->ComNumber, Data);
+    ExternalSend(DataHandingSendData, ComConnection->ComNumber, Data);
 }
 //---------------------------------------------------------------------------
 void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int ErrorNumber)
@@ -197,6 +199,7 @@ void TComConnections::AddNewConnections()
     {
     	try
         {
+
             if(!IsComPortExists(StrToInt(TempComPorts->Strings[i])))
             {
                 TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), DataReadyTrigger, ConnectionErrorTrigger);
@@ -205,6 +208,7 @@ void TComConnections::AddNewConnections()
                     ComConnections.push_back(TempComConnection);
                     IteratorByPatterns->AddConnectionOnIterating(TempComConnection);
                 }
+
             }
         }
         catch(...)
@@ -247,8 +251,11 @@ bool TComConnections::IsComPortExists(int ComNumber)
 {
 	for (int i = 0; i < ComConnections.size(); ++i)
     {
+
      	if(ComConnections[i]->ComNumber == ComNumber)
+        {
         	return true;
+        }
     }
 
     return false;
@@ -291,23 +298,24 @@ void TComConnections::RemoveConnection(TComConnection *ComConnection)
 void __fastcall TComConnections::SearchingTimerOnTimer(TObject *Sender)
 {
     SearchingTimer->Enabled = false;
-	SearchDevices();
+    SearchDevices();
     SearchingTimer->Enabled = true;
 }
 //---------------------------------------------------------------------------
 void TComConnections::ExternalSend(int DataHanding, int ComNumber, std::vector<byte> Data)
 {
-	std::vector<byte> SendData;
-    if(Data.size())
+    std::vector<byte> SendData;
+    if((std::vector<byte>)NULL != Data)
     	SendData = Data;
 
-    SendData.insert(Data.begin(), ComNumber);
-    SendData.insert(Data.begin(), DataHandingSendData);
-    SendData.insert(Data.begin(), ComPortConnectionType);
-	DataReadyForSendingTrigger(SendData);
+    SendData.insert(SendData.begin(), ComNumber);
+    SendData.insert(SendData.begin(), DataHanding);
+    SendData.insert(SendData.begin(), ComPortConnectionType);
+
+    DataReadyForSendingTrigger(SendData);
 }
 //---------------------------------------------------------------------------
-void NotifyDeviceConnected(TComConnection *ComConnection)
+void TComConnections::NotifyDeviceConnected(TComConnection *ComConnection)
 {
     ExternalSend(DataHandingNewConnection, ComConnection->ComNumber);
 }

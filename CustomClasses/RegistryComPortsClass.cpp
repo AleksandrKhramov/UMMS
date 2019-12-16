@@ -30,7 +30,7 @@ TStringList *TRegistryComPorts::GetComPorts()
 
     for(int i = 0; i < ComNameList->Count ; i++)
     {
-        ComPortList->Add(Registry->ReadString(ComNameList->Strings[i]).SubString(4, 1));
+        ComPortList->Add(Registry->ReadString(ComNameList->Strings[i]).SubString(4, ComNameList->Strings[i].Length() - 3));
     }
     return ComPortList;
 }

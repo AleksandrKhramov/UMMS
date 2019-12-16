@@ -34,6 +34,7 @@ private:
     void RemoveNonexistentConnections();
     void AddNewConnections();
 	void NotifyConnectionRemoved(int ComNumber);
+    void NotifyDeviceConnected(TComConnection *ComConnection);
     void UpdateComLists();
     bool IsComPortExists(int ComNumber);
     bool IsListsIdentical(TStringList *, TStringList *);
