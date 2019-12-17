@@ -147,6 +147,7 @@ bool TComConnections::IsAllActiveConnectionsExists()
     }
 
     delete RegistryComPorts;
+
     return true;
 }
 //---------------------------------------------------------------------------
@@ -202,16 +203,17 @@ void TComConnections::RemoveNonexistentConnections()
 //---------------------------------------------------------------------------
 void TComConnections::AddNewConnections()
 {
+    ExternalSend(88, 8);
 	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
 	TStringList *TempComNames = RegistryComPorts->GetComNames();
     TStringList *TempComPorts = RegistryComPorts->GetComPorts();
+
 
 	for (int i = 0; i < TempComNames->Count; ++i)
     {
     	try
         {
-
-            if(!IsComPortExists(StrToInt(TempComPorts->Strings[i])))
+            if(!IsComPortExists(TempComPorts->Strings[i].ToInt()))
             {
                 TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
                 if(TempComConnection != NULL)
@@ -223,7 +225,7 @@ void TComConnections::AddNewConnections()
         }
         catch(...)
         {
-        	//Handing Error of creating Connection
+
         }
     }
 
@@ -264,6 +266,7 @@ bool TComConnections::IsComPortExists(int ComNumber)
 
      	if(ComConnections[i]->ComNumber == ComNumber)
         {
+        	ExternalSend(89, ComNumber);
         	return true;
         }
     }
@@ -330,43 +333,11 @@ void TComConnections::NotifyDeviceConnected(TComConnection *ComConnection)
     ExternalSend(DataHandingNewConnection, ComConnection->ComNumber);
 }
 //---------------------------------------------------------------------------
-void __fastcall TComConnections::WinDeviceChangeMessage(TMessage &Msg)
+void TComConnections::ExternalConnectionsUpdate()
 {
-   /*	if(Msg.WParam == DBT_CONFIGCHANGECANCELED)
-	 	ShowMessage("DBT_CONFIGCHANGECANCELED");
-
-      if(Msg.WParam == DBT_CONFIGCHANGED)
-	 	ShowMessage("DBT_CONFIGCHANGED");
-
-    if(Msg.WParam == DBT_CUSTOMEVENT)
-	 	ShowMessage("DBT_CUSTOMEVENT");  */
-
-    if(Msg.WParam == DBT_DEVICEARRIVAL)   				//Прибор подключён и доступен
-	 	List->Items->Add("DBT_DEVICEARRIVAL");
-
-    if(Msg.WParam == DBT_DEVICEQUERYREMOVE)          //Запрос разрешения на отключение прибора(обычно не приходит)
-	 	List->Items->Add("DBT_DEVICEQUERYREMOVE"); /**/
-
-    if(Msg.WParam == DBT_DEVICEQUERYREMOVEFAILED)      //Если какое-либо приложение отменило отключение прибора (обычно не приходит)
-	 	List->Items->Add("DBT_DEVICEQUERYREMOVEFAILED");
-
-    if(Msg.WParam == DBT_DEVICEREMOVECOMPLETE)         //Прибор отключён и больше недоступен
-	 	List->Items->Add("DBT_DEVICEREMOVECOMPLETE");
-
-  /* if(Msg.WParam == DBT_DEVICEREMOVEPENDING)       //Последнее предупреждение перед тем, как прибор будет отключен
-	 	List->Items->Add("DBT_DEVICEREMOVEPENDING");
-
-     if(Msg.WParam == DBT_DEVICETYPESPECIFIC)
-	 	List->Items->Add("DBT_DEVICETYPESPECIFIC"); */
-
-    if(Msg.WParam == DBT_DEVNODES_CHANGED)
-	 	List->Items->Add("DBT_DEVNODES_CHANGED");
-
-    /*if(Msg.WParam == DBT_QUERYCHANGECONFIG)
-	 	List->Items->Add("DBT_QUERYCHANGECONFIG");
-
-    if(Msg.WParam == DBT_USERDEFINED)
-	 	List->Items->Add("DBT_USERDEFINED");  */
+    SearchingTimer->Enabled = false;
+    SearchDevices();
+    SearchingTimer->Enabled = true;
 }
 //---------------------------------------------------------------------------
 

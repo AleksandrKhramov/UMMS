@@ -41,13 +41,24 @@ TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumbe
     catch(...)
     {
     	ConnectionErrorTrigger(this, ComConnectionOpenError);                    	//Ошибка при открытии порта
+        return;
     }
+
+    ComPort->Open = false;
 }
 //---------------------------------------------------------------------------
 //Деструктор
 TComConnection::~TComConnection()
 {
-	ComPort->Open = false;
+	try
+    {
+		ComPort->Open = false;
+    }
+    catch(...)
+    {
+    	ConnectionErrorTrigger(this, ComConnectionCloseError);
+    }
+
 	delete ComPort;
     delete TimeoutTimer;
 
@@ -76,18 +87,44 @@ void __fastcall TComConnection::TimoutTimerOnTimer(TObject *Sender)
     ExpectationTimer->Enabled = false;
    	DataReadyTrigger(this, RecievedData);
     RecievedData.clear();
-
+    try
+    {
+		ComPort->Open = false;
+    }
+    catch(...)
+    {
+    	ConnectionErrorTrigger(this, ComConnectionCloseError);
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TComConnection::ExpectationTimerOnTimer(TObject *Sender)
 {
 	TimeoutTimer->Enabled = false;
     ExpectationTimer->Enabled = false;
+    try
+    {
+		ComPort->Open = false;
+    }
+    catch(...)
+    {
+    	ConnectionErrorTrigger(this, ComConnectionCloseError);
+    }
     ConnectionErrorTrigger(this, ComConnectionDataPassExpectationError);
+
 }
 //---------------------------------------------------------------------------
 void TComConnection::SendData(std::vector<byte> Data)
 {
+	try
+    {
+    	ComPort->Open = true;
+    }
+    catch(...)
+    {
+    	ConnectionErrorTrigger(this, ComConnectionOpenError);
+        return;
+    }
+
 	byte *Buf = new byte(Data.size());
 
     for(int i = 0; i < Data.size(); ++i)
