@@ -3,7 +3,7 @@
 #define ComConnectionsClassH
 //---------------------------------------------------------------------------
 //							  Built headers
-
+#include "Dbt.h"
 //---------------------------------------------------------------------------
 #pragma hdrstop
 //---------------------------------------------------------------------------
@@ -42,6 +42,12 @@ private:
     void RemoveConnection(TComConnection *);
     void ExternalSend(int DataHanding, int ComNumber, std::vector<byte> Data = (std::vector<byte>)NULL);
     void __fastcall SearchingTimerOnTimer(TObject *Sender);
+protected:
+	BEGIN_MESSAGE_MAP
+		VCL_MESSAGE_HANDLER(WM_DEVICECHANGE, TMessage, WinDeviceChangeMessage);
+	END_MESSAGE_MAP(TForm)
+
+    void __fastcall WinDeviceChangeMessage(TMessage &Msg);
 public:
     void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);
