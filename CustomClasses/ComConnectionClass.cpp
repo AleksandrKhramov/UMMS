@@ -76,6 +76,7 @@ void __fastcall TComConnection::TimoutTimerOnTimer(TObject *Sender)
     ExpectationTimer->Enabled = false;
    	DataReadyTrigger(this, RecievedData);
     RecievedData.clear();
+
 }
 //---------------------------------------------------------------------------
 void __fastcall TComConnection::ExpectationTimerOnTimer(TObject *Sender)
