@@ -215,7 +215,7 @@ void TComConnections::AddNewConnections()
         {
             if(!IsComPortExists(TempComPorts->Strings[i].ToInt()))
             {
-                TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
+                TComConnection *TempComConnection = new TComConnection(TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
                 if(TempComConnection != NULL)
                 {
                     ComConnections.push_back(TempComConnection);

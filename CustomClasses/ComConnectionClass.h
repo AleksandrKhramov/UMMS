@@ -3,9 +3,9 @@
 #define ComConnectionClassH
 //---------------------------------------------------------------------------
 //							  Built headers
-#include "AdPort.hpp"
-#include "OoMisc.hpp"
 #include <vector>
+#include <System.hpp>
+#include <System.SysUtils.hpp>
 //---------------------------------------------------------------------------
 #pragma hdrstop
 //---------------------------------------------------------------------------
@@ -16,24 +16,28 @@ class TComConnection
 {
 private:
 public:
-    TApdComPort* ComPort;
-    TTimer* TimeoutTimer;
-    TTimer* ExpectationTimer;
-    std::vector<byte> RecievedData;
+
     String ComName;
     int ComNumber;
+    int ExpectationDelay;
+    std::vector<byte> TransmittingData;
 
-    void __fastcall ComPortOnTriggerAvail(TObject *CP, WORD Count);
-    void __fastcall TimoutTimerOnTimer(TObject *Sender);
-    void __fastcall ExpectationTimerOnTimer(TObject *Sender);
+    HANDLE COMport;				//дескриптор порта
+    HANDLE reader;				//дескриптор потока чтения из порта
+	HANDLE writer;				//дескриптор потока записи в порт
+
+    void COMOpen(int _ComNumber, int _BaudRate);
+    void COMClose(void);
+
+    DWORD WINAPI ReadThread(LPVOID);
+	DWORD WINAPI WriteThread(LPVOID);
 
     void (__closure *DataReadyTrigger)(TComConnection *, std::vector<byte>);
     void (__closure *ConnectionErrorTrigger)(TComConnection *, int ErrorNumber);
 
     void SendData(std::vector<byte> Data);
 
-    TComConnection(TComponent* Owner,                                   			//Конструктор
-                    String ComName,
+    TComConnection( String ComName,
                     int ComNumber,
                     int ExpectationDelay,
     				void (__closure *_DataReadyTrigger)(TComConnection *, std::vector<byte>),

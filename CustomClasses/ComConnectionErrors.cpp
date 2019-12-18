@@ -6,6 +6,7 @@ enum ComConnectionErrors
     ComConnectionOpenError,
     ComConnectionDataPassError,
     ComConnectionDataPassExpectationError,
+    ComConnectionReceivingDataError,
     ComConnectionCloseError
 };
 #endif
