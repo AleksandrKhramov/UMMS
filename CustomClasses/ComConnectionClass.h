@@ -34,7 +34,10 @@ public:
     void (__closure *DataReadyTrigger)(TComConnection *, std::vector<byte>);
     void (__closure *ConnectionErrorTrigger)(TComConnection *, int ErrorNumber);
 
+    OVERLAPPED overlapped;		//будем использовать для операций чтения (см. поток ReadThread)
+	OVERLAPPED overlappedwr;       	//будем использовать для операций записи (см. поток WriteThread)
     void SendData(std::vector<byte> Data);
+    void Write(std::vector<byte> Data);
     void WaitAnswer();
 
     TComConnection( String ComName,

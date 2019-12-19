@@ -4,6 +4,10 @@
 enum ComConnectionErrors
 {
     ComConnectionOpenError,
+    ComConnectionOpenInvalidHandleError,
+    ComConnectionOpenGetStateError,
+    ComConnectionOpenSetStateError,
+    ComConnectionOpenSetTimeoutsError,
     ComConnectionDataPassError,
     ComConnectionDataPassExpectationError,
     ComConnectionReceivingDataError,
