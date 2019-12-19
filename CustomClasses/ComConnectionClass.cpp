@@ -61,6 +61,7 @@ TComConnection::~TComConnection()
 
 	delete ComPort;
     delete TimeoutTimer;
+    delete ExpectationTimer;
 
     RecievedData.clear();
     RecievedData.~vector();

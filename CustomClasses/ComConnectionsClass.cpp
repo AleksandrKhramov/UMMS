@@ -203,7 +203,7 @@ void TComConnections::RemoveNonexistentConnections()
 //---------------------------------------------------------------------------
 void TComConnections::AddNewConnections()
 {
-    ExternalSend(88, 8);
+
 	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
 	TStringList *TempComNames = RegistryComPorts->GetComNames();
     TStringList *TempComPorts = RegistryComPorts->GetComPorts();
@@ -213,11 +213,14 @@ void TComConnections::AddNewConnections()
     {
     	try
         {
+
             if(!IsComPortExists(TempComPorts->Strings[i].ToInt()))
             {
-                TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
+            	TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
+
                 if(TempComConnection != NULL)
                 {
+                	ExternalSend(TempComPorts->Strings[i].ToInt(), 88);
                     ComConnections.push_back(TempComConnection);
                     IteratorByPatterns->AddConnectionOnIterating(TempComConnection);
                 }
@@ -266,7 +269,6 @@ bool TComConnections::IsComPortExists(int ComNumber)
 
      	if(ComConnections[i]->ComNumber == ComNumber)
         {
-        	ExternalSend(89, ComNumber);
         	return true;
         }
     }
