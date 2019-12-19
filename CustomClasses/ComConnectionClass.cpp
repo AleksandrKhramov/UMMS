@@ -37,10 +37,26 @@ void TComConnection::SendData(std::vector<byte> Data)
 {
 	try
     {
-    	TransmittingData = Data;
-        PurgeComm(COMport, PURGE_TXCLEAR);             //очистить передающий буфер порта
+    	PurgeComm(COMport, PURGE_TXCLEAR);             //очистить передающий буфер порта
 
-        ResumeThread(writer);               //активировать поток записи данных в порт
+    	DWORD temp, signal;	//temp - переменная-заглушка
+        overlappedwr.hEvent = CreateEvent(NULL, true, true, NULL);   	  		//создать событие
+
+        byte *Buffer = new byte(Data.size());
+        for (int i = 0; i < Data.size(); ++i)
+        	Buffer[i] = Data[i];
+
+        WriteFile(COMport, Buffer, Data.size(), &temp, &overlappedwr);  	//записать байты в порт (перекрываемая операция!)
+        signal = WaitForSingleObject(overlappedwr.hEvent, 100);	  			//приостановить поток, пока не завершится перекрываемая операция WriteFile
+
+        if((signal == WAIT_OBJECT_0) && (GetOverlappedResult(COMport, &overlappedwr, &temp, true)))	//если операция завершилась успешно
+        {
+        	WaitAnswer();
+        }
+        else
+        {
+        	ConnectionErrorTrigger(this, ComConnectionDataPassError);
+        }
     }
     catch(...)
     {
@@ -49,7 +65,7 @@ void TComConnection::SendData(std::vector<byte> Data)
     }
 }
 //---------------------------------------------------------------------------
-DWORD WINAPI TComConnection::ReadThread(LPVOID)
+void TComConnection::WaitAnswer()
 {
 	COMSTAT comstat;		//структура текущего состояния порта, в данной программе используется для определения количества принятых в порт байтов
     DWORD RecievedByteCount, temp, mask, signal;	//переменная temp используется в качестве заглушки
@@ -57,62 +73,36 @@ DWORD WINAPI TComConnection::ReadThread(LPVOID)
 
     overlapped.hEvent = CreateEvent(NULL, true, true, NULL);	//создать сигнальный объект-событие для асинхронных операций
     SetCommMask(COMport, EV_RXCHAR);                   	        //установить маску на срабатывание по событию приёма байта в порт
- 	while(1)						//пока поток не будет прерван, выполняем цикл
-  	{
-    	WaitCommEvent(COMport, &mask, &overlapped);               	//ожидать события приёма байта (это и есть перекрываемая операция)
-       	signal = WaitForSingleObject(overlapped.hEvent, INFINITE);	//приостановить поток до прихода байта
-   		if(signal == WAIT_OBJECT_0)				        //если событие прихода байта произошло
-    	{
-        	if(GetOverlappedResult(COMport, &overlapped, &temp, true)) //проверяем, успешно ли завершилась перекрываемая операция WaitCommEvent
-      			if((mask & EV_RXCHAR)!=0)					//если произошло именно событие прихода байта
+
+    WaitCommEvent(TComConnection::COMport, &mask, &overlapped);               	//ожидать события приёма байта (это и есть перекрываемая операция)
+    signal = WaitForSingleObject(overlapped.hEvent, 200);	//приостановить поток до прихода байта
+
+    if(signal == WAIT_OBJECT_0)				        //если событие прихода байта произошло
+    {
+        if(GetOverlappedResult(COMport, &overlapped, &temp, true)) //проверяем, успешно ли завершилась перекрываемая операция WaitCommEvent
+            if((mask & EV_RXCHAR)!=0)					//если произошло именно событие прихода байта
+            {
+                ClearCommError(COMport, &temp, &comstat);		//нужно заполнить структуру COMSTAT
+                RecievedByteCount = comstat.cbInQue;                          	//и получить из неё количество принятых байтов
+                byte *Buffer = new byte(RecievedByteCount);
+                if(RecievedByteCount)                         					//если действительно есть байты для чтения
                 {
-                    ClearCommError(COMport, &temp, &comstat);		//нужно заполнить структуру COMSTAT
-                    RecievedByteCount = comstat.cbInQue;                          	//и получить из неё количество принятых байтов
-                    byte *Buffer = new byte(RecievedByteCount);
-                    if(RecievedByteCount)                         					//если действительно есть байты для чтения
-                    {
-                    	ReadFile(COMport, Buffer, RecievedByteCount, &temp, &overlapped);     //прочитать байты из порта в буфер программы
+                	ReadFile(COMport, Buffer, RecievedByteCount, &temp, &overlapped);     //прочитать байты из порта в буфер программы
 
-                        for (byte i = 0; i < RecievedByteCount; ++i)
-                        {
-                        	RecievedData.push_back(Buffer[i]);
-                        }
-                     	DataReadyTrigger(this, RecievedData);
-    					RecievedData.clear();
-        			}
-                    else
+                    for(byte i = 0; i < RecievedByteCount; ++i)
                     {
-                    	ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
+                    	RecievedData.push_back(Buffer[i]);
                     }
-                    delete [] Buffer;
-       			}
-    	}
-  	}
-}
-//---------------------------------------------------------------------------
-DWORD WINAPI WriteThread(LPVOID)
-{
-	DWORD temp, signal;	//temp - переменная-заглушка
+                    DataReadyTrigger(this, RecievedData);
+                }
+                else
+                {
+                	ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
+                }
+                delete [] Buffer;
+            }
+    }
 
- 	overlappedwr.hEvent = CreateEvent(NULL, true, true, NULL);   	  		//создать событие
- 	while(1)
-  	{
-    	byte *Buffer = new byte(TComConnection::TransmittingData.size());
-
-    	WriteFile(TComConnection::COMport, bufwr, strlen(bufwr), &temp, &overlappedwr);  	//записать байты в порт (перекрываемая операция!)
-   		signal = WaitForSingleObject(overlappedwr.hEvent, 100);	  			//приостановить поток, пока не завершится перекрываемая операция WriteFile
-
-   		if((signal == WAIT_OBJECT_0) && (GetOverlappedResult(COMport, &overlappedwr, &temp, true)))	//если операция завершилась успешно
-     	{
-
-     	}
-   		else
-        {
-        	ConnectionErrorTrigger(this, ComConnectionDataPassError);
-        }
-        TransmitingData.clear();
-   		SuspendThread(writer);
-  	}
 }
 //---------------------------------------------------------------------------
 //функция открытия и инициализации порта
@@ -186,13 +176,13 @@ void TComConnection::COMOpen(int _ComNumber, int _BaudRate)
 
  	PurgeComm(COMport, PURGE_RXCLEAR);	//очистить принимающий буфер порта
 
- 	reader = CreateThread(NULL, 0, ReadThread, NULL, 0, NULL);			//создаём поток чтения, который сразу начнёт выполняться (предпоследний параметр = 0)
- 	writer = CreateThread(NULL, 0, WriteThread, NULL, CREATE_SUSPENDED, NULL);	//создаём поток записи в остановленном состоянии (предпоследний параметр = CREATE_SUSPENDED)
+ 	//reader = CreateThread(NULL, 0, ReadThread, NULL, 0, NULL);			//создаём поток чтения, который сразу начнёт выполняться (предпоследний параметр = 0)
+ 	//writer = CreateThread(NULL, 0, WriteThread, NULL, CREATE_SUSPENDED, NULL);	//создаём поток записи в остановленном состоянии (предпоследний параметр = CREATE_SUSPENDED)
 }
 //---------------------------------------------------------------------------
 void TComConnection::COMClose()
 {
-	if(writer)		//если поток записи работает, завершить его; проверка if(writer) обязательна, иначе возникают ошибки
+	/*if(writer)		//если поток записи работает, завершить его; проверка if(writer) обязательна, иначе возникают ошибки
   	{
         TerminateThread(writer,0);
         CloseHandle(overlappedwr.hEvent);	//нужно закрыть объект-событие
@@ -204,7 +194,7 @@ void TComConnection::COMClose()
         TerminateThread(reader,0);
         CloseHandle(overlapped.hEvent);	//нужно закрыть объект-событие
         CloseHandle(reader);
-  	}
+  	}    */
 
     CloseHandle(COMport);                  //закрыть порт
     COMport = NULL;				//обнулить переменную для дескриптора порта
