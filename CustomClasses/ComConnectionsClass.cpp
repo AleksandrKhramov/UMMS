@@ -203,7 +203,6 @@ void TComConnections::RemoveNonexistentConnections()
 //---------------------------------------------------------------------------
 void TComConnections::AddNewConnections()
 {
-
 	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
 	TStringList *TempComNames = RegistryComPorts->GetComNames();
     TStringList *TempComPorts = RegistryComPorts->GetComPorts();
@@ -334,9 +333,19 @@ void TComConnections::NotifyDeviceConnected(TComConnection *ComConnection)
     ExternalSend(DataHandingNewConnection, ComConnection->ComNumber);
 }
 //---------------------------------------------------------------------------
-void TComConnections::ExternalConnectionsUpdate()
+void TComConnections::ExternalConnectionsUpdate(bool Full)
 {
     SearchingTimer->Enabled = false;
+    if(Full)
+    {
+        for(int i = 0; i < ComConnections.size(); ++i)
+            ComConnections[i]->~TComConnection();
+
+        ComConnections.clear();
+
+        ComNameList->Clear();
+        ComPortList->Clear();
+    }
     SearchDevices();
     SearchingTimer->Enabled = true;
 }
