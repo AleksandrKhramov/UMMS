@@ -220,7 +220,6 @@ void TComConnections::AddNewConnections()
 
                 if(TempComConnection != NULL)
                 {
-                	ExternalSend(TempComPorts->Strings[i].ToInt(), 88);
                     ComConnections.push_back(TempComConnection);
                     IteratorByPatterns->AddConnectionOnIterating(TempComConnection);
                 }
