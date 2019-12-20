@@ -13,7 +13,7 @@ TComConnection::TComConnection(String _ComName, int _ComNumber, int _Expectation
 
     DataReadyTrigger = _DataReadyTrigger;                             //«адаЄм обработчик прин€того пакета
     ConnectionErrorTrigger = _ConnectionErrorTrigger;                 //«адаЄм обработчик ошибок соединени€
-
+    ComNumber = _ComNumber;
     try
     {
     	COMOpen(_ComNumber, BaudRate);                        									//ќткрываем COM-порт
@@ -28,15 +28,20 @@ TComConnection::TComConnection(String _ComName, int _ComNumber, int _Expectation
 //ƒеструктор
 TComConnection::~TComConnection()
 {
-
+	COMClose();
 }
 //---------------------------------------------------------------------------
-void TComConnection::Write(std::vector<byte> Data)
+void TComConnection::SendData(std::vector<byte> Data)
 {
- 	if(COMport == INVALID_HANDLE_VALUE) {
 
-        ConnectionErrorTrigger(this, ComConnectionDataPassError);
- 		return;
+ 	if(COMport == INVALID_HANDLE_VALUE)
+    {
+    	COMOpen(ComNumber);
+        if(COMport == INVALID_HANDLE_VALUE)
+        {
+            ConnectionErrorTrigger(this, ComConnectionDataPassError);
+            return;
+        }
  	}
 
  	DWORD feedback;
@@ -46,7 +51,7 @@ void TComConnection::Write(std::vector<byte> Data)
 
  	if(!WriteFile(COMport, Buffer, Data.size(), &feedback, NULL) || feedback != Data.size()) {
  		COMClose();
- 		ConnectionErrorTrigger(this, feedback);
+ 		ConnectionErrorTrigger(this, ComConnectionDataPassExpectationError);
         delete Buffer;
  		return;
  	}
@@ -58,45 +63,6 @@ void TComConnection::Write(std::vector<byte> Data)
 
 }
 //---------------------------------------------------------------------------
-void TComConnection::SendData(std::vector<byte> Data)
-{
-	try
-    {
-    	COMOpen(ComNumber);
-
-    	PurgeComm(COMport, PURGE_TXCLEAR);             //очистить передающий буфер порта
-
-    	DWORD temp, signal;	//temp - переменна€-заглушка
-        overlappedwr.hEvent = CreateEvent(NULL, true, true, NULL);   	  		//создать событие
-
-        byte *Buffer = new byte[Data.size()];
-        for (int i = 0; i < Data.size(); ++i)
-        	Buffer[i] = Data[i];
-
-        WriteFile(COMport, Buffer, Data.size(), &temp, 0);  	//записать байты в порт (перекрываема€ операци€!)
-
-        ConnectionErrorTrigger(this, temp);
-        return;
-
-        signal = WaitForSingleObject(overlappedwr.hEvent, INFINITE);	  			//приостановить поток, пока не завершитс€ перекрываема€ операци€ WriteFile
-
-        if((signal == WAIT_OBJECT_0) && (GetOverlappedResult(COMport, &overlappedwr, &temp, true)))	//если операци€ завершилась успешно
-        {
-        	WaitAnswer();
-        }
-        else
-        {
-        	ConnectionErrorTrigger(this, ComConnectionDataPassError);
-        }
-
-    }
-    catch(...)
-    {
-    	ConnectionErrorTrigger(this, ComConnectionOpenError);
-        return;
-    }
-}
-//---------------------------------------------------------------------------
 void TComConnection::WaitAnswer()
 {
 	std::vector<byte> Data;
@@ -104,12 +70,12 @@ void TComConnection::WaitAnswer()
 	int TIMEOUT = 1000;
  	if(COMport == INVALID_HANDLE_VALUE)
     {
- 		ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
+ 		ConnectionErrorTrigger(this, ComConnectionReceivingDataHandleError);
         return;
 
     }
 
-    Sleep(300);
+    Sleep(ExpectationDelay);
 
  	DWORD begin = GetTickCount();
  	DWORD feedback = 0;
@@ -137,19 +103,19 @@ void TComConnection::WaitAnswer()
 
  		assert(feedback <= len);
  		len -= feedback;
-        ConnectionErrorTrigger(this, feedback);
- 	}
-
-
- 	if(len) {
- 		ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
  	}
 
     for (int i = 0; i < RecievedByteCount; i++)
     {
     	Data.push_back(buf[i]);
     }
-    DataReadyTrigger(this,Data);
+
+    if(RecievedByteCount)
+    	DataReadyTrigger(this, Data);
+    else
+    {
+     	ConnectionErrorTrigger(this, ComConnectionDataPassExpectationError);
+    }
 
 }
 //---------------------------------------------------------------------------
@@ -161,7 +127,7 @@ void TComConnection::COMOpen(int _ComNumber, int _BaudRate)
     DCB dcb;                	//структура дл€ общей инициализации порта DCB
     COMMTIMEOUTS Timeouts;  	//структура дл€ установки таймаутов
 
- 	TempPortName = "COM" + IntToStr(_ComNumber);	//получить им€ выбранного порта
+ 	TempPortName = "\\\\.\\COM" + IntToStr(_ComNumber);	//получить им€ выбранного порта
 
     COMport = CreateFile(AnsiString(TempPortName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 

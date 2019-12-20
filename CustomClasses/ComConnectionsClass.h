@@ -43,7 +43,8 @@ private:
     void ExternalSend(int DataHanding, int ComNumber, std::vector<byte> Data = (std::vector<byte>)NULL);
     void __fastcall SearchingTimerOnTimer(TObject *Sender);
 public:
-	void ExternalConnectionsUpdate();
+	TComConnection *ComConnectionOfComNumber(int ComNumber);
+	void ExternalConnectionsUpdate(bool Full = false);
     void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);
 

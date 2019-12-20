@@ -10,6 +10,7 @@ enum ComConnectionErrors
     ComConnectionOpenSetTimeoutsError,
     ComConnectionDataPassError,
     ComConnectionDataPassExpectationError,
+    ComConnectionReceivingDataHandleError,
     ComConnectionReceivingDataError,
     ComConnectionCloseError
 };
