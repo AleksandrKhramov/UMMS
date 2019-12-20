@@ -36,6 +36,7 @@ TComConnections::~TComConnections()
     delete ComPortList;
 }
 //---------------------------------------------------------------------------
+//***************Внутренние и внешние обработчики событий********************
 void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vector<byte> Data)
 {
     if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
@@ -65,8 +66,19 @@ void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int 
             }
         	break;
         case ComConnectionDataPassError :
-
-
+            if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
+            {
+            	if(!IteratorByPatterns->NextPatternForConnection(ComConnection))
+                {
+                	IteratorByPatterns->RemoveConnection(ComConnection);
+                    if (-1 != Index)
+                    {
+                        ComConnection->~TComConnection();
+                        ComConnection = NULL;
+                        ComConnections.erase(ComConnections.begin() + Index);
+                    }
+                }
+            }
         	break;
         case ComConnectionDataPassExpectationError :
         	if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
@@ -124,55 +136,15 @@ void TComConnections::HandingDataTrigger(std::vector<byte> Data)
     }
 }
 //---------------------------------------------------------------------------
+//***********************Функции алгоритма поиска****************************
 void TComConnections::SearchDevices()
 {
-    if(!IsAllActiveConnectionsExists() || IsComListUpdated())
+    while(!IsAllActiveConnectionsExists() || IsComListUpdated())
     {
-     	UpdateActiveConnections();
+   		RemoveNonexistentConnections();
+        AddNewConnections();
+        UpdateComLists();
     }
-}
-//---------------------------------------------------------------------------
-bool TComConnections::IsAllActiveConnectionsExists()
-{
-	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
-	TStringList *TempComPorts = RegistryComPorts->GetComPorts();
-
-	for(int i = 0; i < ComConnections.size(); ++i)
-    {
-		if(-1 == TempComPorts->IndexOf(IntToStr(ComConnections[i]->ComNumber)))
-        {
-            delete RegistryComPorts;
-            return false;
-        }
-    }
-
-    delete RegistryComPorts;
-
-    return true;
-}
-//---------------------------------------------------------------------------
-bool TComConnections::IsComListUpdated()
-{
-	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
-	TStringList *TempComNames = RegistryComPorts->GetComNames();
-    TStringList *TempComPorts = RegistryComPorts->GetComPorts();
-
-	if(IsListsIdentical(ComNameList, TempComNames))
-    	if(IsListsIdentical(ComPortList, TempComPorts))
-        {
-        	delete RegistryComPorts;
-       		return false;
-        }
-
-    delete RegistryComPorts;
-    return true;
-}
-//---------------------------------------------------------------------------
-void TComConnections::UpdateActiveConnections()
-{
-	RemoveNonexistentConnections();
-    AddNewConnections();
-    UpdateComLists();
 }
 //---------------------------------------------------------------------------
 void TComConnections::RemoveNonexistentConnections()
@@ -186,6 +158,9 @@ void TComConnections::RemoveNonexistentConnections()
     	if((-1 == TempComNames->IndexOf(ComConnections[i]->ComName)) ||
         	(TempComNames->IndexOf(ComConnections[i]->ComName) != TempComPorts->IndexOf(IntToStr(ComConnections[i]->ComNumber))))
         {
+        	if(IteratorByPatterns->IsConnectionOnIterating(ComConnections[i]))
+            	IteratorByPatterns->RemoveConnection(ComConnections[i]);
+
         	ComNameList->Delete(ComNameList->IndexOf(ComConnections[i]->ComName));
             ComPortList->Delete(ComPortList->IndexOf(IntToStr(ComConnections[i]->ComNumber)));
             
@@ -212,7 +187,6 @@ void TComConnections::AddNewConnections()
     {
     	try
         {
-
             if(!IsComPortExists(TempComPorts->Strings[i].ToInt()))
             {
             	TComConnection *TempComConnection = new TComConnection(Owner, TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
@@ -222,6 +196,11 @@ void TComConnections::AddNewConnections()
                     ComConnections.push_back(TempComConnection);
                     IteratorByPatterns->AddConnectionOnIterating(TempComConnection);
                 }
+            }
+            else
+            {
+             	if(!IteratorByPatterns->IsConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt())))
+                 	IteratorByPatterns->AddConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt()));
             }
         }
         catch(...)
@@ -258,44 +237,6 @@ void TComConnections::UpdateComLists()
     }
 
 	delete RegistryComPorts;
-}
-//---------------------------------------------------------------------------
-bool TComConnections::IsComPortExists(int ComNumber)
-{
-	for (int i = 0; i < ComConnections.size(); ++i)
-    {
-
-     	if(ComConnections[i]->ComNumber == ComNumber)
-        {
-        	return true;
-        }
-    }
-
-    return false;
-}
-//---------------------------------------------------------------------------
-bool TComConnections::IsListsIdentical(TStringList *List1, TStringList *List2)
-{
-	if(List1->Count != List2->Count)
-    	return false;
-
-    for (int i = 0; i < List1->Count; ++i)
-    {
-    	if(List1->Strings[i] != List2->Strings[i])
-        	return false;
-    }
-
-    return true;
-}
-//---------------------------------------------------------------------------
-int TComConnections::IndexOfComConnection(TComConnection *ComConnection)
-{
-	for (int i = 0; i < ComConnections.size(); ++i)
-    {
-   		if(ComConnections[i] == ComConnection)
-        	return i;
-    }
-    return -1;
 }
 //---------------------------------------------------------------------------
 void TComConnections::RemoveConnection(TComConnection *ComConnection)
@@ -350,4 +291,89 @@ void TComConnections::ExternalConnectionsUpdate(bool Full)
     SearchingTimer->Enabled = true;
 }
 //---------------------------------------------------------------------------
+//***************************Условные функции********************************
+bool TComConnections::IsComPortExists(int ComNumber)
+{
+	for (int i = 0; i < ComConnections.size(); ++i)
+    {
 
+     	if(ComConnections[i]->ComNumber == ComNumber)
+        {
+        	return true;
+        }
+    }
+
+    return false;
+}
+//---------------------------------------------------------------------------
+bool TComConnections::IsListsIdentical(TStringList *List1, TStringList *List2)
+{
+	if(List1->Count != List2->Count)
+    	return false;
+
+    for (int i = 0; i < List1->Count; ++i)
+    {
+    	if(List1->Strings[i] != List2->Strings[i])
+        	return false;
+    }
+
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TComConnections::IsAllActiveConnectionsExists()
+{
+	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
+	TStringList *TempComPorts = RegistryComPorts->GetComPorts();
+
+	for(int i = 0; i < ComConnections.size(); ++i)
+    {
+		if(-1 == TempComPorts->IndexOf(IntToStr(ComConnections[i]->ComNumber)))
+        {
+            delete RegistryComPorts;
+            return false;
+        }
+    }
+
+    delete RegistryComPorts;
+
+    return true;
+}
+//---------------------------------------------------------------------------
+bool TComConnections::IsComListUpdated()
+{
+	TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
+	TStringList *TempComNames = RegistryComPorts->GetComNames();
+    TStringList *TempComPorts = RegistryComPorts->GetComPorts();
+
+	if(IsListsIdentical(ComNameList, TempComNames))
+    	if(IsListsIdentical(ComPortList, TempComPorts))
+        {
+        	delete RegistryComPorts;
+       		return false;
+        }
+
+    delete RegistryComPorts;
+    return true;
+}
+//---------------------------------------------------------------------------
+//************************Вспомогательные функции****************************
+int TComConnections::IndexOfComConnection(TComConnection *ComConnection)
+{
+	for (int i = 0; i < ComConnections.size(); ++i)
+    {
+   		if(ComConnections[i] == ComConnection)
+        	return i;
+    }
+    return -1;
+}
+//---------------------------------------------------------------------------
+TComConnection *TComConnections::ComConnectionOfComNumber(int ComNumber)
+{
+	for (int i = 0; i < ComConnections.size(); ++i)
+    {
+   		if(ComConnections[i]->ComNumber == ComNumber)
+        	return ComConnections[i];
+    }
+    return NULL;
+}
+//---------------------------------------------------------------------------

@@ -30,7 +30,6 @@ private:
     void ConnectionErrorTrigger(TComConnection *, int ErrorNumber);
     bool IsAllActiveConnectionsExists();
     bool IsComListUpdated();
-    void UpdateActiveConnections();
     void RemoveNonexistentConnections();
     void AddNewConnections();
 	void NotifyConnectionRemoved(int ComNumber);
@@ -39,6 +38,7 @@ private:
     bool IsComPortExists(int ComNumber);
     bool IsListsIdentical(TStringList *, TStringList *);
     int  IndexOfComConnection(TComConnection *);
+    TComConnection *ComConnectionOfComNumber(int);
     void RemoveConnection(TComConnection *);
     void ExternalSend(int DataHanding, int ComNumber, std::vector<byte> Data = (std::vector<byte>)NULL);
     void __fastcall SearchingTimerOnTimer(TObject *Sender);

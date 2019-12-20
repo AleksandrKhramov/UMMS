@@ -20,13 +20,13 @@ TComConnection::TComConnection(TComponent* Owner, String _ComName, int _ComNumbe
     TimeoutTimer = new TTimer(Owner);                   //Создаём таймер для задержки обработки данных
     													//(ComPortOnTriggerAvail срабатывает нескольо раз перед тем, как придёт вся посылка)
     TimeoutTimer->Enabled = false;                      //И сразу отключем его
-    TimeoutTimer->Interval = 50;                        //устанавливаем интервал срабатывания
+    TimeoutTimer->Interval = ExpectationDelay;                        //устанавливаем интервал срабатывания
     TimeoutTimer->OnTimer = TimoutTimerOnTimer;         //Задаём обработчик события таймера
     TimeoutTimer->Name = "TimeoutTimerForComPort" + IntToStr(ComNumber);
 
     ExpectationTimer = new TTimer(Owner);
     ExpectationTimer->Enabled = false;
-    ExpectationTimer->Interval = ExpectationDelay;
+    ExpectationTimer->Interval = ExpectationDelay + 100;
     ExpectationTimer->OnTimer = ExpectationTimerOnTimer;
     ExpectationTimer->Name = "ExpectationTimerForComPort" + IntToStr(ComNumber);
 
