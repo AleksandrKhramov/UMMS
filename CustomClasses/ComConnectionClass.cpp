@@ -23,7 +23,6 @@ TComConnection::TComConnection(String _ComName, int _ComNumber, int _Expectation
     	ConnectionErrorTrigger(this, ComConnectionOpenError);                    	//Ошибка при открытии порта
         return;
     }
-   	COMClose();
 }
 //---------------------------------------------------------------------------
 //Деструктор
@@ -35,18 +34,25 @@ TComConnection::~TComConnection()
 void TComConnection::Write(std::vector<byte> Data)
 {
  	if(COMport == INVALID_HANDLE_VALUE) {
+
         ConnectionErrorTrigger(this, ComConnectionDataPassError);
  		return;
  	}
 
  	DWORD feedback;
-    byte *Buffer = new byte(Data.size());
- 	if(!WriteFile(COMport, Buffer, (DWORD)Data.size(), &feedback, &overlappedwr) || feedback != (DWORD)Data.size()) {
- 		CloseHandle(COMport);
+    byte *Buffer = new byte[Data.size()];
+    for (int i = 0; i < Data.size(); ++i)
+    	Buffer[i] = Data[i];
+
+ 	if(!WriteFile(COMport, Buffer, Data.size(), &feedback, NULL) || feedback != Data.size()) {
+ 		COMClose();
  		ConnectionErrorTrigger(this, feedback);
+        delete Buffer;
  		return;
  	}
-
+    WaitAnswer();
+    delete Buffer;
+    COMClose();
  	// In some cases it's worth uncommenting
  	//FlushFileBuffers(m_Handle);
 
@@ -56,12 +62,14 @@ void TComConnection::SendData(std::vector<byte> Data)
 {
 	try
     {
+    	COMOpen(ComNumber);
+
     	PurgeComm(COMport, PURGE_TXCLEAR);             //очистить передающий буфер порта
 
     	DWORD temp, signal;	//temp - переменная-заглушка
         overlappedwr.hEvent = CreateEvent(NULL, true, true, NULL);   	  		//создать событие
 
-        byte *Buffer = new byte(Data.size());
+        byte *Buffer = new byte[Data.size()];
         for (int i = 0; i < Data.size(); ++i)
         	Buffer[i] = Data[i];
 
@@ -74,13 +82,13 @@ void TComConnection::SendData(std::vector<byte> Data)
 
         if((signal == WAIT_OBJECT_0) && (GetOverlappedResult(COMport, &overlappedwr, &temp, true)))	//если операция завершилась успешно
         {
-
         	WaitAnswer();
         }
         else
         {
         	ConnectionErrorTrigger(this, ComConnectionDataPassError);
         }
+
     }
     catch(...)
     {
@@ -110,8 +118,8 @@ void TComConnection::WaitAnswer()
     COMSTAT comstat;
     ClearCommError(COMport, &temp, &comstat);
     RecievedByteCount = comstat.cbInQue;
-   	ConnectionErrorTrigger(this, 100 + RecievedByteCount);
- 	unsigned char* buf = new byte(RecievedByteCount);
+
+ 	unsigned char* buf = new byte[RecievedByteCount];
 
  	DWORD len = RecievedByteCount;
 
@@ -119,74 +127,29 @@ void TComConnection::WaitAnswer()
 
  	while(len && (attempts || (GetTickCount()-begin) < (DWORD)TIMEOUT/3))
     {
-        ConnectionErrorTrigger(this, 99);
+
  		if(attempts) attempts--;
 
- 		if(!ReadFile(COMport, buf, 1, &feedback, NULL))
+ 		if(!ReadFile(COMport, buf, RecievedByteCount, &feedback, NULL))
         {
  			ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
  		}
 
  		assert(feedback <= len);
  		len -= feedback;
- 		buf += feedback;
-
+        ConnectionErrorTrigger(this, feedback);
  	}
+
 
  	if(len) {
  		ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
  	}
 
-
-
-
-   /*	COMSTAT comstat;		//структура текущего состояния порта, в данной программе используется для определения количества принятых в порт байтов
-    DWORD RecievedByteCount, temp, Event, signal;	//переменная temp используется в качестве заглушки
-    std::vector<byte> RecievedData;
-
-    overlapped.hEvent = CreateEvent(NULL, true, true, NULL);	//создать сигнальный объект-событие для асинхронных операций
-    SetCommMask(COMport, EV_RXCHAR);                   	        //установить маску на срабатывание по событию приёма байта в порт
-
-    WaitCommEvent(COMport, &Event, &overlapped);               	//ожидать события приёма байта (это и есть перекрываемая операция)
-    signal = WaitForSingleObject(overlapped.hEvent, INFINITE);	//приостановить поток до прихода байта
-
-    if(signal == WAIT_OBJECT_0)				        //если событие прихода байта произошло
+    for (int i = 0; i < RecievedByteCount; i++)
     {
-        if(GetOverlappedResult(COMport, &overlapped, &temp, true)) //проверяем, успешно ли завершилась перекрываемая операция WaitCommEvent
-        {
-            byte *Buffer;
-        	switch(Event)
-            {
-                case EV_RXCHAR :
-
-                    ClearCommError(COMport, &temp, &comstat);		//нужно заполнить структуру COMSTAT
-                    RecievedByteCount = comstat.cbInQue;                          	//и получить из неё количество принятых байтов
-
-                    Buffer = new byte(RecievedByteCount);
-                    if(RecievedByteCount)                         					//если действительно есть байты для чтения
-                    {
-                        ReadFile(COMport, Buffer, RecievedByteCount, &temp, &overlapped);     //прочитать байты из порта в буфер программы
-
-                        for(byte i = 0; i < RecievedByteCount; ++i)
-                        {
-                            RecievedData.push_back(Buffer[i]);
-                        }
-                        DataReadyTrigger(this, RecievedData);
-                    }
-                    else
-                    {
-                        ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
-                    }
-                    delete [] Buffer;
-                	break;
-                case EV_BREAK :
-                	ConnectionErrorTrigger(this, 100 + Event);
-                    break;
-                default :
-                	ConnectionErrorTrigger(this, 99);
-            }
-        }
-    } */
+    	Data.push_back(buf[i]);
+    }
+    DataReadyTrigger(this,Data);
 
 }
 //---------------------------------------------------------------------------
@@ -200,14 +163,13 @@ void TComConnection::COMOpen(int _ComNumber, int _BaudRate)
 
  	TempPortName = "COM" + IntToStr(_ComNumber);	//получить имя выбранного порта
 
-    COMport = CreateFile(AnsiString(TempPortName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+    COMport = CreateFile(AnsiString(TempPortName).c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if(COMport == INVALID_HANDLE_VALUE)            //если ошибка открытия порта
     {
     	ConnectionErrorTrigger(this, ComConnectionOpenInvalidHandleError);
     	return;
     }
-
  	//инициализация порта
 
  	dcb.DCBlength = sizeof(DCB); 	//в первое поле структуры DCB необходимо занести её длину, она будет использоваться функциями настройки порта для контроля корректности структуры

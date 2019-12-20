@@ -25,7 +25,7 @@ public:
     //static HANDLE reader;				//дескриптор потока чтения из порта
 	//static HANDLE writer;				//дескриптор потока записи в порт
 
-    void COMOpen(int _ComNumber, int _BaudRate);
+    void COMOpen(int _ComNumber, int _BaudRate = 9600);
     void COMClose(void);
 
     //static DWORD WINAPI ReadThread(LPVOID);
