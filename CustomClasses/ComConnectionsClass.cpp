@@ -41,8 +41,7 @@ void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vecto
 {
     if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
     {
-
-        NotifyDeviceConnected(ComConnection);
+        NotifyDeviceConnected(ComConnection->ComNumber);
         IteratorByPatterns->RemoveConnection(ComConnection);
     	return;
     }
@@ -52,11 +51,25 @@ void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vecto
 //---------------------------------------------------------------------------
 void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int ErrorNumber)
 {
+   // ExternalSend(ErrorNumber, ComConnection->ComNumber);
 	int Index = IndexOfComConnection(ComConnection);
 	switch(ErrorNumber)
     {
         case ComConnectionOpenError :
-            RemoveNonexistentConnections();
+        case ComConnectionOpenInvalidHandleError :
+            if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
+            	IteratorByPatterns->RemoveConnection(ComConnection);
+
+            if(IteratorByPatterns->IsReiteratedConnection(ComConnection))
+            {
+                if (-1 != Index)
+                	NotifyDeviceDisconnected(ComConnection->ComNumber);
+                RemoveConnectionFully(ComConnection);
+                break;
+            }
+
+            if (-1 != Index)
+            	RemoveConnection(ComConnection);
         	break;
         case ComConnectionDataPassError :
             if(IteratorByPatterns->IsConnectionOnIterating(ComConnection))
@@ -64,12 +77,16 @@ void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int 
             	if(!IteratorByPatterns->NextPatternForConnection(ComConnection))
                 {
                 	IteratorByPatterns->RemoveConnection(ComConnection);
-                    if (-1 != Index)
+                    if(IteratorByPatterns->IsReiteratedConnection(ComConnection))
                     {
-                        ComConnection->~TComConnection();
-                        ComConnection = NULL;
-                        ComConnections.erase(ComConnections.begin() + Index);
+                    	if (-1 != Index)
+                			NotifyDeviceDisconnected(ComConnection->ComNumber);
+                        RemoveConnectionFully(ComConnection);
+                        break;
                     }
+
+                    if (-1 != Index)
+                        RemoveConnection(ComConnection);
                 }
             }
         	break;
@@ -78,13 +95,16 @@ void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int 
             {
             	if(!IteratorByPatterns->NextPatternForConnection(ComConnection))
                 {
-                	IteratorByPatterns->RemoveConnection(ComConnection);
-                    if (-1 != Index)
+                	if(IteratorByPatterns->IsReiteratedConnection(ComConnection))
                     {
-                        ComConnection->~TComConnection();
-                        ComConnection = NULL;
-                        ComConnections.erase(ComConnections.begin() + Index);
+                    	if (-1 != Index)
+                			NotifyDeviceDisconnected(ComConnection->ComNumber);
+                        RemoveConnectionFully(ComConnection);
+                        break;
                     }
+
+                    if (-1 != Index)
+                        RemoveConnection(ComConnection);
                 }
             }
         	break;
@@ -148,20 +168,21 @@ void TComConnections::RemoveNonexistentConnections()
 
 	for (int i = 0; i < ComConnections.size(); ++i)
     {
-    	if(((-1 == TempComNames->IndexOf(ComConnections[i]->ComName)) ||
-           (TempComNames->IndexOf(ComConnections[i]->ComName) != TempComPorts->IndexOf(IntToStr(ComConnections[i]->ComNumber)))) &&
-           ((-1 != ComNameList->IndexOf(ComConnections[i]->ComName)) && (-1 != ComPortList->IndexOf(IntToStr(ComConnections[i]->ComNumber)))))
+    	if((-1 == TempComNames->IndexOf(ComConnections[i]->ComName)) ||
+           (TempComNames->IndexOf(ComConnections[i]->ComName) != TempComPorts->IndexOf(IntToStr(ComConnections[i]->ComNumber))) )
         {
         	if(IteratorByPatterns->IsConnectionOnIterating(ComConnections[i]))
             	IteratorByPatterns->RemoveConnection(ComConnections[i]);
 
-        	ComNameList->Delete(ComNameList->IndexOf(ComConnections[i]->ComName));
-            ComPortList->Delete(ComPortList->IndexOf(IntToStr(ComConnections[i]->ComNumber)));
+            if(-1 != ComNameList->IndexOf(ComConnections[i]->ComName))
+        		ComNameList->Delete(ComNameList->IndexOf(ComConnections[i]->ComName));
 
-        	NotifyConnectionRemoved(ComConnections[i]->ComNumber);
+            if(-1 != ComPortList->IndexOf(IntToStr(ComConnections[i]->ComNumber)))
+            	ComPortList->Delete(ComPortList->IndexOf(IntToStr(ComConnections[i]->ComNumber)));
 
-            ComConnections[i]->~TComConnection();
-        	ComConnections.erase(ComConnections.begin() + i);
+        	NotifyDeviceDisconnected(ComConnections[i]->ComNumber);
+
+            RemoveConnection(ComConnections[i]);
 
             --i;
         }
@@ -176,14 +197,13 @@ void TComConnections::AddNewConnections()
 	TStringList *TempComNames = RegistryComPorts->GetComNames();
     TStringList *TempComPorts = RegistryComPorts->GetComPorts();
 
-
 	for (int i = 0; i < TempComNames->Count; ++i)
     {
     	try
         {
             if(!IsComPortExists(TempComPorts->Strings[i].ToInt()))
             {
-            	TComConnection *TempComConnection = new TComConnection(TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 100, DataReadyTrigger, ConnectionErrorTrigger);
+            	TComConnection *TempComConnection = new TComConnection(TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 200, DataReadyTrigger, ConnectionErrorTrigger);
 
                 if(TempComConnection != NULL)
                 {
@@ -193,8 +213,8 @@ void TComConnections::AddNewConnections()
             }
             else
             {
-               //	if(!IteratorByPatterns->IsConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt())))
-                // 	IteratorByPatterns->AddConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt()));
+               	if(!IteratorByPatterns->IsConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt())))
+                 	IteratorByPatterns->AddConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt()), true);
             }
         }
         catch(...)
@@ -204,11 +224,6 @@ void TComConnections::AddNewConnections()
     }
 
 	delete RegistryComPorts;
-}
-//---------------------------------------------------------------------------
-void TComConnections::NotifyConnectionRemoved(int ComNumber)
-{
-    ExternalSend(DataHandingConnectionRemoved, ComNumber);
 }
 //---------------------------------------------------------------------------
 void TComConnections::UpdateComLists()
@@ -243,6 +258,17 @@ void TComConnections::RemoveConnection(TComConnection *ComConnection)
     }
 }
 //---------------------------------------------------------------------------
+void TComConnections::RemoveConnectionFully(TComConnection *ComConnection)
+{
+    if(-1 != ComNameList->IndexOf(ComConnection->ComName))
+    	ComNameList->Delete(ComNameList->IndexOf(ComConnection->ComName));
+
+    if(-1 != ComPortList->IndexOf(IntToStr(ComConnection->ComNumber)))
+    	ComPortList->Delete(ComPortList->IndexOf(IntToStr(ComConnection->ComNumber)));
+
+    RemoveConnection(ComConnection);
+}
+//---------------------------------------------------------------------------
 void __fastcall TComConnections::SearchingTimerOnTimer(TObject *Sender)
 {
     SearchingTimer->Enabled = false;
@@ -263,9 +289,14 @@ void TComConnections::ExternalSend(int DataHanding, int ComNumber, std::vector<b
     DataReadyForSendingTrigger(SendData);
 }
 //---------------------------------------------------------------------------
-void TComConnections::NotifyDeviceConnected(TComConnection *ComConnection)
+void TComConnections::NotifyDeviceDisconnected(int ComNumber)
 {
-    ExternalSend(DataHandingNewConnection, ComConnection->ComNumber);
+    ExternalSend(DataHandingConnectionRemoved, ComNumber);
+}
+//---------------------------------------------------------------------------
+void TComConnections::NotifyDeviceConnected(int ComNumber)
+{
+    ExternalSend(DataHandingNewConnection, ComNumber);
 }
 //---------------------------------------------------------------------------
 void TComConnections::ExternalConnectionsUpdate(bool Full)
@@ -289,14 +320,8 @@ void TComConnections::ExternalConnectionsUpdate(bool Full)
 bool TComConnections::IsComPortExists(int ComNumber)
 {
 	for (int i = 0; i < ComConnections.size(); ++i)
-    {
-
      	if(ComConnections[i]->ComNumber == ComNumber)
-        {
         	return true;
-        }
-    }
-
     return false;
 }
 //---------------------------------------------------------------------------
@@ -329,7 +354,6 @@ bool TComConnections::IsAllActiveConnectionsExists()
     }
 
     delete RegistryComPorts;
-
     return true;
 }
 //---------------------------------------------------------------------------

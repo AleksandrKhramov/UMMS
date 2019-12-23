@@ -13,7 +13,10 @@ TComConnection::TComConnection(String _ComName, int _ComNumber, int _Expectation
 
     DataReadyTrigger = _DataReadyTrigger;                             //Задаём обработчик принятого пакета
     ConnectionErrorTrigger = _ConnectionErrorTrigger;                 //Задаём обработчик ошибок соединения
+
     ComNumber = _ComNumber;
+    ComName = _ComName;
+
     try
     {
     	COMOpen(_ComNumber, BaudRate);                        									//Открываем COM-порт
@@ -33,7 +36,6 @@ TComConnection::~TComConnection()
 //---------------------------------------------------------------------------
 void TComConnection::SendData(std::vector<byte> Data)
 {
-
  	if(COMport == INVALID_HANDLE_VALUE)
     {
     	COMOpen(ComNumber);
@@ -44,79 +46,48 @@ void TComConnection::SendData(std::vector<byte> Data)
         }
  	}
 
- 	DWORD feedback;
-    byte *Buffer = new byte[Data.size()];
-    for (int i = 0; i < Data.size(); ++i)
-    	Buffer[i] = Data[i];
+ 	DWORD NumberOfBytesWritten;
 
- 	if(!WriteFile(COMport, Buffer, Data.size(), &feedback, NULL) || feedback != Data.size()) {
+ 	if(!WriteFile(COMport, &Data[0], Data.size(), &NumberOfBytesWritten, NULL) || NumberOfBytesWritten != Data.size()) {
  		COMClose();
  		ConnectionErrorTrigger(this, ComConnectionDataPassExpectationError);
-        delete Buffer;
  		return;
  	}
     WaitAnswer();
-    delete Buffer;
     COMClose();
- 	// In some cases it's worth uncommenting
- 	//FlushFileBuffers(m_Handle);
-
 }
 //---------------------------------------------------------------------------
 void TComConnection::WaitAnswer()
 {
-	std::vector<byte> Data;
-
-	int TIMEOUT = 1000;
  	if(COMport == INVALID_HANDLE_VALUE)
     {
  		ConnectionErrorTrigger(this, ComConnectionReceivingDataHandleError);
         return;
-
     }
 
     Sleep(ExpectationDelay);
 
- 	DWORD begin = GetTickCount();
- 	DWORD feedback = 0;
+    std::vector<byte> Data;
+ 	DWORD NumberOfBytesRead = 0;
 
-    DWORD RecievedByteCount, temp;
-    COMSTAT comstat;
-    ClearCommError(COMport, &temp, &comstat);
-    RecievedByteCount = comstat.cbInQue;
+    DWORD RecievedByteCount, Errors;
+    COMSTAT DeviceStatusInfo;
 
- 	unsigned char* buf = new byte[RecievedByteCount];
+    ClearCommError(COMport, &Errors, &DeviceStatusInfo);
+    RecievedByteCount = DeviceStatusInfo.cbInQue;
 
- 	DWORD len = RecievedByteCount;
+    Data.resize(RecievedByteCount);
 
- 	int attempts = 3;
+    if(!ReadFile(COMport, &Data[0], RecievedByteCount, &NumberOfBytesRead, NULL))
+    	ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
 
- 	while(len && (attempts || (GetTickCount()-begin) < (DWORD)TIMEOUT/3))
-    {
-
- 		if(attempts) attempts--;
-
- 		if(!ReadFile(COMport, buf, RecievedByteCount, &feedback, NULL))
-        {
- 			ConnectionErrorTrigger(this, ComConnectionReceivingDataError);
- 		}
-
- 		assert(feedback <= len);
- 		len -= feedback;
- 	}
-
-    for (int i = 0; i < RecievedByteCount; i++)
-    {
-    	Data.push_back(buf[i]);
-    }
+    if(RecievedByteCount != NumberOfBytesRead)
+    	ConnectionErrorTrigger(this, ComConnectionReceivingDataCountError);
 
     if(RecievedByteCount)
     	DataReadyTrigger(this, Data);
     else
-    {
      	ConnectionErrorTrigger(this, ComConnectionDataPassExpectationError);
-    }
-
 }
 //---------------------------------------------------------------------------
 //функция открытия и инициализации порта

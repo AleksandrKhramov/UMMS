@@ -15,11 +15,11 @@ TIteratorByPatterns::~TIteratorByPatterns()
 
 }
 //---------------------------------------------------------------------------
-void TIteratorByPatterns::AddConnectionOnIterating(TComConnection *ComConnection)
+void TIteratorByPatterns::AddConnectionOnIterating(TComConnection *ComConnection, bool Reiterating)
 {
 	if(ComConnection != NULL)
     {
-        TConnectionWithPatternNumber *ConnectionWithPatternNumber = new TConnectionWithPatternNumber(ComConnection, 0);
+        TConnectionWithPatternNumber *ConnectionWithPatternNumber = new TConnectionWithPatternNumber(ComConnection, 0, Reiterating);
         ConnectionsWithPatternNumbers.push_back(ConnectionWithPatternNumber);
 
         if(Patterns.size() != 0)
@@ -93,4 +93,11 @@ void TIteratorByPatterns::ClearConnections()
 
 }
 //---------------------------------------------------------------------------
-
+bool TIteratorByPatterns::IsReiteratedConnection(TComConnection *ComConnection)
+{
+	int Index = IndexOfComConnection(ComConnection);
+	if(-1 != Index)
+        return ConnectionsWithPatternNumbers[Index]->Reiterating;
+    return false;
+}
+//---------------------------------------------------------------------------

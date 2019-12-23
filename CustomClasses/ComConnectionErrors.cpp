@@ -11,6 +11,7 @@ enum ComConnectionErrors
     ComConnectionDataPassError,
     ComConnectionDataPassExpectationError,
     ComConnectionReceivingDataHandleError,
+    ComConnectionReceivingDataCountError,
     ComConnectionReceivingDataError,
     ComConnectionCloseError
 };

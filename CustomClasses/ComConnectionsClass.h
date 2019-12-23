@@ -25,6 +25,7 @@ private:
     TStringList *ComNameList;
     TStringList *ComPortList;
 
+
     void SearchDevices();
 	void DataReadyTrigger(TComConnection *, std::vector<byte>);
     void ConnectionErrorTrigger(TComConnection *, int ErrorNumber);
@@ -33,17 +34,18 @@ private:
     void UpdateActiveConnections();
     void RemoveNonexistentConnections();
     void AddNewConnections();
-	void NotifyConnectionRemoved(int ComNumber);
-    void NotifyDeviceConnected(TComConnection *ComConnection);
+	void NotifyDeviceDisconnected(int ComNumber);
+    void NotifyDeviceConnected(int ComNumber);
     void UpdateComLists();
     bool IsComPortExists(int ComNumber);
     bool IsListsIdentical(TStringList *, TStringList *);
     int  IndexOfComConnection(TComConnection *);
+    TComConnection *ComConnectionOfComNumber(int ComNumber);
     void RemoveConnection(TComConnection *);
+    void RemoveConnectionFully(TComConnection *);
     void ExternalSend(int DataHanding, int ComNumber, std::vector<byte> Data = (std::vector<byte>)NULL);
     void __fastcall SearchingTimerOnTimer(TObject *Sender);
 public:
-	TComConnection *ComConnectionOfComNumber(int ComNumber);
 	void ExternalConnectionsUpdate(bool Full = false);
     void HandingDataTrigger(std::vector<byte>);
     void (__closure *DataReadyForSendingTrigger)(std::vector<byte> Data);

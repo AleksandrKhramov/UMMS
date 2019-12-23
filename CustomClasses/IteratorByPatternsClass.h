@@ -16,11 +16,13 @@ class TIteratorByPatterns
 	{
     	TComConnection *ComConnection;
         int PatternNumber;
+        bool Reiterating;
 
-        TConnectionWithPatternNumber(TComConnection *_ComConnection, int _PatternNumber)
+        TConnectionWithPatternNumber(TComConnection *_ComConnection, int _PatternNumber, bool _Reiterating)
         {
         	ComConnection = _ComConnection;
             PatternNumber = _PatternNumber;
+            Reiterating = _Reiterating;
         }
     };
 
@@ -30,13 +32,15 @@ private:
 
     int IndexOfComConnection(TComConnection *);
 public:
-	void AddConnectionOnIterating(TComConnection *);
+	void AddConnectionOnIterating(TComConnection *, bool Reiterating = false);
     void AddPattern(std::vector<byte> Pattern);
     void ClearPatterns();
     void ClearConnections();
     bool IsConnectionOnIterating(TComConnection *);
     bool NextPatternForConnection(TComConnection *);
     bool RemoveConnection(TComConnection *);
+    bool IsReiteratedConnection(TComConnection *);
+
 
 
     TIteratorByPatterns();
