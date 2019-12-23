@@ -17,7 +17,7 @@ TIteratorByPatterns::~TIteratorByPatterns()
 //---------------------------------------------------------------------------
 void TIteratorByPatterns::AddConnectionOnIterating(TComConnection *ComConnection, bool Reiterating)
 {
-	if(ComConnection != NULL)
+	if((ComConnection != NULL) && (Patterns.size() != 0))
     {
         TConnectionWithPatternNumber *ConnectionWithPatternNumber = new TConnectionWithPatternNumber(ComConnection, 0, Reiterating);
         ConnectionsWithPatternNumbers.push_back(ConnectionWithPatternNumber);

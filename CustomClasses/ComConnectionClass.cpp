@@ -171,4 +171,8 @@ void TComConnection::COMClose()
     COMport = NULL;				//обнулить переменную для дескриптора порта
 }
 //---------------------------------------------------------------------------
-
+void TComConnection::ConnectionTest()
+{
+    COMOpen(ComNumber);
+	COMClose();
+}

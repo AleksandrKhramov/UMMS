@@ -31,6 +31,8 @@ public:
     void SendData(std::vector<byte> Data);
     void WaitAnswer();
 
+	void ConnectionTest();
+
     TComConnection( String ComName,
                     int ComNumber,
                     int ExpectationDelay,

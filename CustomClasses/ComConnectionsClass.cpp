@@ -51,7 +51,7 @@ void TComConnections::DataReadyTrigger(TComConnection *ComConnection, std::vecto
 //---------------------------------------------------------------------------
 void TComConnections::ConnectionErrorTrigger(TComConnection *ComConnection, int ErrorNumber)
 {
-   // ExternalSend(ErrorNumber, ComConnection->ComNumber);
+   	//ExternalSend(ErrorNumber, ComConnection->ComNumber);
 	int Index = IndexOfComConnection(ComConnection);
 	switch(ErrorNumber)
     {
@@ -154,9 +154,27 @@ void TComConnections::SearchDevices()
 {
     if(!IsAllActiveConnectionsExists() || IsComListUpdated())
     {
-   		RemoveNonexistentConnections();
-        AddNewConnections();
+        TRegistryComPorts *RegistryComPorts = new TRegistryComPorts;
+        TStringList *TempComNames1;
+        TStringList *TempComPorts1;
+        TStringList *TempComNames2;
+        TStringList *TempComPorts2;
+        do
+        {
+        	TempComNames1 = RegistryComPorts->GetComNames();
+        	TempComPorts1 = RegistryComPorts->GetComPorts();
+
+            RemoveNonexistentConnections();
+            AddNewConnections();
+
+            TempComNames2 = RegistryComPorts->GetComNames();
+            TempComPorts2 = RegistryComPorts->GetComPorts();
+
+        } while(!IsListsIdentical(TempComNames1, TempComNames2) || !IsListsIdentical(TempComPorts1, TempComPorts2));
+
         UpdateComLists();
+
+		delete RegistryComPorts;
     }
 }
 //---------------------------------------------------------------------------
@@ -203,6 +221,8 @@ void TComConnections::AddNewConnections()
         {
             if(!IsComPortExists(TempComPorts->Strings[i].ToInt()))
             {
+            	ComNameList->Add(TempComNames->Strings[i]);
+                ComPortList->Add(TempComPorts->Strings[i]);
             	TComConnection *TempComConnection = new TComConnection(TempComNames->Strings[i], TempComPorts->Strings[i].ToInt(), 200, DataReadyTrigger, ConnectionErrorTrigger);
 
                 if(TempComConnection != NULL)
@@ -214,7 +234,7 @@ void TComConnections::AddNewConnections()
             else
             {
                	if(!IteratorByPatterns->IsConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt())))
-                 	IteratorByPatterns->AddConnectionOnIterating(ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt()), true);
+                 	ComConnectionOfComNumber(TempComPorts->Strings[i].ToInt())->ConnectionTest();
             }
         }
         catch(...)
