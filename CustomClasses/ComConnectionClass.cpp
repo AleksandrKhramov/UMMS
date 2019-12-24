@@ -160,9 +160,6 @@ void TComConnection::COMOpen(int _ComNumber, int _BaudRate)
  	SetupComm(COMport, 2000, 2000);
 
  	PurgeComm(COMport, PURGE_RXCLEAR);	//очистить принимающий буфер порта
-
- 	//reader = CreateThread(NULL, 0, ReadThread, NULL, 0, NULL);			//создаём поток чтения, который сразу начнёт выполняться (предпоследний параметр = 0)
- 	//writer = CreateThread(NULL, 0, WriteThread, NULL, CREATE_SUSPENDED, NULL);	//создаём поток записи в остановленном состоянии (предпоследний параметр = CREATE_SUSPENDED)
 }
 //---------------------------------------------------------------------------
 void TComConnection::COMClose()
