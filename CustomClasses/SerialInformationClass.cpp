@@ -19,10 +19,8 @@ TSerialInformation::TSerialInformation()
     guidDev->Data4[6] = 0x1f;
     guidDev->Data4[7] = 0x73;
 
-    //HDEVINFO hDevInfo = INVALID_HANDLE_VALUE;
-	//SP_DEVICE_INTERFACE_DETAIL_DATA *pDetData = NULL;
-
-
+    hDevInfo = INVALID_HANDLE_VALUE;
+	pDetData = NULL;
 }
 //---------------------------------------------------------------------------
 //Деструктор
@@ -31,3 +29,60 @@ TSerialInformation::~TSerialInformation()
 	delete guidDev;
 }
 //---------------------------------------------------------------------------
+void TSerialInformation::RefreshDeviceList()
+{
+    try
+	{
+		hDevInfo = SetupDiGetClassDevs( guidDev, NULL, NULL, (DIGCF_PRESENT | DIGCF_DEVICEINTERFACE));
+
+		if(hDevInfo == INVALID_HANDLE_VALUE)
+		{
+
+		}
+
+		// Enumerate the serial ports
+		bool bOk = true;
+		SP_DEVICE_INTERFACE_DATA ifcData;
+		DWORD dwDetDataSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA) + 256;
+		pDetData = (SP_DEVICE_INTERFACE_DETAIL_DATA*) new char[dwDetDataSize];
+		// This is required, according to the documentation. Yes,
+		// it's weird.
+		ifcData.cbSize = sizeof(SP_DEVICE_INTERFACE_DATA);
+		pDetData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+
+    	for (DWORD ii = 0; bOk; ii++)
+        {
+			bOk = SetupDiEnumDeviceInterfaces(hDevInfo, NULL, guidDev, ii, &ifcData);
+			if (bOk)
+            {
+				// Got a device. Get the details.
+				SP_DEVINFO_DATA devdata = {sizeof(SP_DEVINFO_DATA)};
+				bOk = SetupDiGetDeviceInterfaceDetail(hDevInfo, &ifcData, pDetData, dwDetDataSize, NULL, &devdata);
+
+				if (bOk)
+                {
+
+					// Got a path to the device. Try to get some more info.
+
+				}
+				else
+                {
+                	GetLastError();
+				}
+			}
+			else
+            {
+
+				DWORD err = GetLastError();
+				if(err != ERROR_NO_MORE_ITEMS)
+                {
+                 	err;
+				}
+			}
+		}
+    }
+    catch(...)
+    {
+    	//Exception handing ...
+    }
+}
